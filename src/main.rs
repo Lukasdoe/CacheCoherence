@@ -1,5 +1,8 @@
-extern crate clap;
+pub mod types;
+pub mod loader;
+
 use clap::{arg_enum, Parser, ValueEnum};
+use loader::FileLoader;
 
 arg_enum! {
     #[derive(Clone, Debug, ValueEnum)]
@@ -37,5 +40,15 @@ struct ProgramArgs {
 
 fn main() {
     let args = ProgramArgs::parse();
-    println!("Supplied args: {:?}", args);
+    let mut record_streams = match FileLoader::open(&args.input_file) {
+        Ok(streams) => {streams},
+        Err(e) => {
+            println!("Error during loading of the supplied input file: {:?}", e.to_string());
+            std::process::exit(e.raw_os_error().unwrap_or(1));
+        },
+    };
+
+    println!("{:?}", record_streams[0].file_name);
+    println!("{:?}", record_streams[0].start().last().unwrap());
+    println!("{:?}", record_streams[0].start().count());
 }
