@@ -1,8 +1,6 @@
-pub mod types;
-pub mod loader;
-
 use clap::{arg_enum, Parser, ValueEnum};
-use loader::FileLoader;
+
+use cacher::loader::FileLoader;
 
 arg_enum! {
     #[derive(Clone, Debug, ValueEnum)]
@@ -13,8 +11,8 @@ arg_enum! {
 }
 
 #[derive(Parser, Debug)]
-#[clap(version, 
-    about = "\x1b[1mCACHER\x1b[0m - \x1b[1mCA\x1b[0mche \x1b[1mC\x1b[0mo\x1b[1mH\x1b[0merence \x1b[1mE\x1b[0mmulato\x1b[1mR\x1b[0m", 
+#[clap(version,
+    about = "\x1b[1mCACHER\x1b[0m - \x1b[1mCA\x1b[0mche \x1b[1mC\x1b[0mo\x1b[1mH\x1b[0merence \x1b[1mE\x1b[0mmulato\x1b[1mR\x1b[0m",
     long_about = None)]
 struct ProgramArgs {
     /// cache coherence protocol
@@ -41,14 +39,19 @@ struct ProgramArgs {
 fn main() {
     let args = ProgramArgs::parse();
     let mut record_streams = match FileLoader::open(&args.input_file) {
-        Ok(streams) => {streams},
+        Ok(streams) => streams,
         Err(e) => {
-            println!("Error during loading of the supplied input file: {:?}", e.to_string());
+            println!(
+                "Error during loading of the supplied input file: {:?}",
+                e.to_string()
+            );
             std::process::exit(e.raw_os_error().unwrap_or(1));
-        },
+        }
     };
 
-    println!("{:?}", record_streams[0].file_name);
-    println!("{:?}", record_streams[0].start().last().unwrap());
-    println!("{:?}", record_streams[0].start().count());
+    for stream in record_streams.iter_mut() {
+        println!("{:?}", stream.file_name);
+        println!("{:?}", stream.start().last().unwrap());
+        println!("{:?}", stream.start().count());
+    }
 }
