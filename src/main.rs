@@ -1,14 +1,6 @@
-use clap::{arg_enum, Parser, ValueEnum};
+use clap::Parser;
 
-use cacher::loader::FileLoader;
-
-arg_enum! {
-    #[derive(Clone, Debug, ValueEnum)]
-    pub enum Protocol {
-        MESI,
-        Dragon,
-    }
-}
+use cacher::{Core, FileLoader, ProtocolKind};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -17,7 +9,7 @@ arg_enum! {
 struct ProgramArgs {
     /// cache coherence protocol
     #[clap(arg_enum, value_parser)]
-    protocol: Protocol,
+    protocol: ProtocolKind,
 
     /// path to the benchmark archive, e.g. "./blackscholes_four.zip"
     #[clap(value_parser)]
@@ -48,6 +40,11 @@ fn main() {
             std::process::exit(e.raw_os_error().unwrap_or(1));
         }
     };
+
+    let cores: Vec<Core> = record_streams
+        .iter()
+        .map(|_stream| Core::new(&args.protocol))
+        .collect();
 
     for stream in record_streams.iter_mut() {
         println!("{:?}", stream.file_name);
