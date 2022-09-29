@@ -1,13 +1,14 @@
-use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
+use crate::cache::Cache;
+use crate::protocol::ProtocolKind;
 
 pub struct Core {
-    protocol: Box<dyn Protocol>,
+    cache: Cache,
 }
 
 impl Core {
-    pub fn new(kind: &ProtocolKind) -> Self {
+    pub fn new(kind: &ProtocolKind, capacity: usize) -> Self {
         Core {
-            protocol: ProtocolBuilder::new(kind),
+            cache: Cache::new(capacity, kind),
         }
     }
 }

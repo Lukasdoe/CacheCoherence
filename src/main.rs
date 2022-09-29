@@ -43,7 +43,7 @@ fn main() {
 
     let cores: Vec<Core> = record_streams
         .iter()
-        .map(|_stream| Core::new(&args.protocol))
+        .map(|_stream| Core::new(&args.protocol, args.cache_size))
         .collect();
 
     for stream in record_streams.iter_mut() {
