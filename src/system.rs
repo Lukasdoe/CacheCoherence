@@ -2,7 +2,6 @@ use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
-use std::vec::Vec;
 
 pub struct System {
     cores: Vec<Core>,
@@ -11,17 +10,31 @@ pub struct System {
 }
 
 impl System {
-    fn new(
-        mut record_streams: Vec<RecordStream>,
-        protocol: ProtocolKind,
+    pub fn new(
+        protocol: &ProtocolKind,
         capacity: usize,
-    ) -> System {
+        associativity: usize,
+        block_size: usize,
+        record_streams: Vec<RecordStream>,
+    ) -> Self {
+        let cores: Vec<Core> = record_streams
+            .into_iter()
+            .map(|stream| Core::new(&protocol, capacity, associativity, block_size, stream))
+            .collect();
         System {
-            cores: (1..record_streams.len())
-                .map(|_| Core::new(&protocol, capacity, record_streams.remove(0)))
-                .collect(),
+            cores: cores,
             bus: Bus::new(),
             clk: 0,
         }
+    }
+
+    pub fn update(&mut self) -> bool {
+        for core in self.cores.iter_mut() {
+            core.step(&mut self.bus);
+        }
+
+
+
+        false
     }
 }

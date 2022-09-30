@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use cacher::{Bus, Core, FileLoader, ProtocolKind};
+use cacher::{FileLoader, ProtocolKind, System};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -41,16 +41,17 @@ fn main() {
         }
     };
 
-    let mut cores: Vec<Core> = record_streams
-        .into_iter()
-        .map(|stream| Core::new(&args.protocol, args.cache_size, stream))
-        .collect();
-
-    let mut bus = Bus::new();
+    let mut system = System::new(
+        &args.protocol,
+        args.cache_size,
+        args.associativity,
+        args.block_size,
+        record_streams,
+    );
 
     loop {
-        for core in cores.iter_mut() {
-            core.step(&mut bus);
+        if system.update() {
+            break;
         }
     }
 }

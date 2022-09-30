@@ -1,3 +1,4 @@
+mod alu;
 mod bus;
 mod cache;
 mod core;

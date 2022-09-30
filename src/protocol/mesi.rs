@@ -1,11 +1,42 @@
-use super::Protocol;
+use super::{Protocol, ProtocolAction};
+use crate::bus::{Bus, BusAction};
+use std::vec::Vec;
 
-pub struct Mesi;
+pub enum MesiState {
+    M,
+    E,
+    S,
+    I,
+}
+
+pub struct Mesi {
+    cache_state: Vec<MesiState>,
+}
 
 impl Mesi {
-    pub fn new() -> Self {
-        Mesi {}
+    pub fn new(capacity: usize, associativity: usize, block_size: usize) -> Self {
+        Mesi {
+            cache_state: Vec::with_capacity(capacity),
+        }
     }
 }
 
-impl Protocol for Mesi {}
+impl Protocol for Mesi {
+    fn read(&self, addr: usize, hit: bool) -> Vec<BusAction> {
+        todo!()
+    }
+
+    fn write(&self, addr: usize, hit: bool) -> Vec<BusAction> {
+        todo!()
+    }
+
+    fn transition(
+        &mut self,
+        addr: usize,
+        hit: bool,
+        action: ProtocolAction,
+        bus: &mut Bus,
+    ) -> bool {
+        false
+    }
+}
