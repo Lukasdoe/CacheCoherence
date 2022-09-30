@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use cacher::{Core, FileLoader, ProtocolKind};
+use cacher::{Bus, Core, FileLoader, ProtocolKind};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -30,7 +30,7 @@ struct ProgramArgs {
 
 fn main() {
     let args = ProgramArgs::parse();
-    let mut record_streams = match FileLoader::open(&args.input_file) {
+    let record_streams = match FileLoader::open(&args.input_file) {
         Ok(streams) => streams,
         Err(e) => {
             println!(
@@ -41,14 +41,16 @@ fn main() {
         }
     };
 
-    let cores: Vec<Core> = record_streams
-        .iter()
-        .map(|_stream| Core::new(&args.protocol, args.cache_size))
+    let mut cores: Vec<Core> = record_streams
+        .into_iter()
+        .map(|stream| Core::new(&args.protocol, args.cache_size, stream))
         .collect();
 
-    for stream in record_streams.iter_mut() {
-        println!("{:?}", stream.file_name);
-        println!("{:?}", stream.start().last().unwrap());
-        println!("{:?}", stream.start().count());
+    let mut bus = Bus::new();
+
+    loop {
+        for core in cores.iter_mut() {
+            core.step(&mut bus);
+        }
     }
 }
