@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
-use zip::ZipArchive;
+use std::io::{BufRead, BufReader, Lines};
+use zip::{read::ZipFile, ZipArchive};
 
 #[derive(Debug)]
 pub enum Label {
@@ -15,23 +15,16 @@ pub struct Record {
     pub value: u32,
 }
 
-pub struct RecordStream {
-    pub zip_archive: ZipArchive<File>,
-    pub file_name: String,
-}
-
-impl RecordStream {
-    pub fn start(&mut self) -> Box<dyn Iterator<Item = Record> + '_> {
-        let data_file = self.zip_archive.by_name(&self.file_name).unwrap();
-        let lines = BufReader::new(data_file).lines();
-        return Box::new(lines.map(move |line| Record {
-            label: RecordStream::line_to_label(line.as_ref().unwrap()),
-            value: RecordStream::line_to_value(line.as_ref().unwrap()),
-        }));
+impl Record {
+    fn new(label: &str, value: &str) -> Self {
+        Record {
+            label: Record::line_to_label(label),
+            value: Record::line_to_value(value),
+        }
     }
 
     fn line_to_label(line: &str) -> Label {
-        match line.split(" ").nth(0).unwrap() {
+        match line {
             "0" => Label::Load,
             "1" => Label::Store,
             _ => Label::Other,
@@ -39,8 +32,41 @@ impl RecordStream {
     }
 
     fn line_to_value(line: &str) -> u32 {
-        let value_s = line.split(" ").nth(1).unwrap();
-        let stripped_s = value_s.trim_start_matches("0x");
+        let stripped_s = line.trim_start_matches("0x");
         u32::from_str_radix(stripped_s, 16).unwrap()
+    }
+}
+pub struct RecordStream {
+    pub file_name: String,
+    _zip_archive: Box<ZipArchive<File>>,
+    lines: Lines<BufReader<ZipFile<'static>>>,
+}
+
+impl Iterator for RecordStream {
+    type Item = Record;
+    fn next(&mut self) -> Option<Record> {
+        let next = self.lines.next()?;
+        if let Ok(line) = next {
+            let mut parts = line.split(" ");
+            let label = parts.next().unwrap();
+            let value = parts.next().unwrap();
+            Some(Record::new(label, value))
+        } else {
+            None
+        }
+    }
+}
+
+impl RecordStream {
+    pub fn new(file_name: String, zip_archive: ZipArchive<std::fs::File>) -> Self {
+        let mut archive = Box::new(zip_archive);
+        let zip_file = unsafe {
+            std::mem::transmute::<_, ZipFile<'static>>(archive.by_name(&file_name).unwrap())
+        };
+        RecordStream {
+            file_name,
+            _zip_archive: archive,
+            lines: BufReader::new(zip_file).lines(),
+        }
     }
 }

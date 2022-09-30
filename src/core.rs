@@ -5,20 +5,22 @@ use crate::record::RecordStream;
 
 pub struct Core {
     cache: Cache,
-    stream: RecordStream,
+    records: RecordStream,
 }
 
 impl Core {
-    pub fn new(kind: &ProtocolKind, capacity: usize, mut stream: RecordStream) -> Self {
-        println!("{:?}", stream.file_name);
-        println!("{:?}", stream.start().last().unwrap());
-        println!("{:?}", stream.start().count());
+    pub fn new(kind: &ProtocolKind, capacity: usize, records: RecordStream) -> Self {
+        println!("{:?}", records.file_name);
 
         Core {
             cache: Cache::new(capacity, kind),
-            stream,
+            records,
         }
     }
 
-    pub fn step(&mut self, bus: &mut Bus) {}
+    pub fn step(&mut self, bus: &mut Bus) {
+        if let Some(t) = self.records.next() {
+            println!("{:?} {:?}", self.records.file_name, t);
+        }
+    }
 }
