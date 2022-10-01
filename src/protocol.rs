@@ -1,6 +1,7 @@
 use crate::bus::{Bus, BusAction};
 use clap::ArgEnum;
-use std::vec::Vec;
+use serde::Deserialize;
+use std::{sync::Arc, vec::Vec};
 
 pub mod dragon;
 pub mod mesi;
@@ -17,8 +18,7 @@ pub trait Protocol {
     fn transition(&mut self, addr: usize, hit: bool, action: ProtocolAction, bus: &mut Bus)
         -> bool;
 }
-
-#[derive(Clone, Debug, ArgEnum)]
+#[derive(Clone, Debug, ArgEnum, Deserialize)]
 pub enum ProtocolKind {
     Mesi,
     Dragon,
@@ -32,12 +32,12 @@ impl ProtocolBuilder {
         cache_size: usize,
         associativity: usize,
         block_size: usize,
-    ) -> Box<dyn Protocol> {
+    ) -> Arc<dyn Protocol + Send + Sync> {
         match kind {
             ProtocolKind::Dragon => {
-                Box::new(dragon::Dragon::new(cache_size, associativity, block_size))
+                Arc::new(dragon::Dragon::new(cache_size, associativity, block_size))
             }
-            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(cache_size, associativity, block_size)),
+            ProtocolKind::Mesi => Arc::new(mesi::Mesi::new(cache_size, associativity, block_size)),
         }
     }
 }

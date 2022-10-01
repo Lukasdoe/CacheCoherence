@@ -1,4 +1,4 @@
-use std::fmt;
+use std::sync::Arc;
 
 use crate::alu::Alu;
 use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
@@ -11,7 +11,7 @@ pub struct Cache {
     cache: Vec<Vec<u32>>,
     lru_storage: Vec<Vec<usize>>,
 
-    protocol: Box<dyn Protocol>,
+    protocol: Arc<dyn Protocol + Send + Sync>,
 
     // size of a cache set in bytes
     set_size: usize,

@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
-use zip::{read::ZipFile, ZipArchive};
 
 #[derive(Debug)]
 pub enum Label {
@@ -38,8 +37,7 @@ impl Record {
 }
 pub struct RecordStream {
     pub file_name: String,
-    _zip_archive: Box<ZipArchive<File>>,
-    lines: Lines<BufReader<ZipFile<'static>>>,
+    lines: Lines<BufReader<File>>,
 }
 
 impl Iterator for RecordStream {
@@ -58,15 +56,10 @@ impl Iterator for RecordStream {
 }
 
 impl RecordStream {
-    pub fn new(file_name: String, zip_archive: ZipArchive<std::fs::File>) -> Self {
-        let mut archive = Box::new(zip_archive);
-        let zip_file = unsafe {
-            std::mem::transmute::<_, ZipFile<'static>>(archive.by_name(&file_name).unwrap())
-        };
+    pub fn new(file_name: String, file: File) -> Self {
         RecordStream {
             file_name,
-            _zip_archive: archive,
-            lines: BufReader::new(zip_file).lines(),
+            lines: BufReader::new(file).lines(),
         }
     }
 }

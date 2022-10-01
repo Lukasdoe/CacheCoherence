@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::Error;
-use zip::ZipArchive;
 
 use crate::record::RecordStream;
 
@@ -8,14 +7,14 @@ pub struct FileLoader;
 
 impl FileLoader {
     pub fn open(path: &str) -> Result<Vec<RecordStream>, Error> {
-        let zip_file = File::open(path)?;
-        let zip_archive = ZipArchive::new(zip_file)?;
+        let paths = std::fs::read_dir(path).unwrap();
 
         let mut res_vec = Vec::new();
-        for file_name in zip_archive.file_names() {
-            let zip_archive = ZipArchive::new(File::open(path)?)?;
-            let file_name = String::from(file_name);
-            res_vec.push(RecordStream::new(file_name, zip_archive));
+        for path in paths {
+            let path = path.unwrap();
+            let file = File::open(&path.path())?;
+            let file_name = String::from(path.file_name().as_os_str().to_str().unwrap());
+            res_vec.push(RecordStream::new(file_name, file));
         }
         Ok(res_vec)
     }

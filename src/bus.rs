@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct Bus {
     // task: Option<Task>,
 }
