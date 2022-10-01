@@ -28,7 +28,7 @@ impl Core {
     }
 
     pub fn step(&mut self, bus: &mut Bus) {
-        if self.alu.update() {
+        if self.alu.update() || self.cache.update() {
             return;
         }
 
