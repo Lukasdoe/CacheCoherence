@@ -29,15 +29,15 @@ pub struct ProtocolBuilder;
 impl ProtocolBuilder {
     pub fn new(
         kind: &ProtocolKind,
-        capacity: usize,
+        cache_size: usize,
         associativity: usize,
         block_size: usize,
     ) -> Box<dyn Protocol> {
         match kind {
             ProtocolKind::Dragon => {
-                Box::new(dragon::Dragon::new(capacity, associativity, block_size))
+                Box::new(dragon::Dragon::new(cache_size, associativity, block_size))
             }
-            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(capacity, associativity, block_size)),
+            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(cache_size, associativity, block_size)),
         }
     }
 }

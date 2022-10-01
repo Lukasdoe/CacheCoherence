@@ -14,7 +14,7 @@ pub struct System {
 impl System {
     pub fn new(
         protocol: &ProtocolKind,
-        capacity: usize,
+        cache_size: usize,
         associativity: usize,
         block_size: usize,
         record_streams: Vec<RecordStream>,
@@ -23,7 +23,7 @@ impl System {
             .into_iter()
             .enumerate()
             .map(|(id, stream)| {
-                Core::new(&protocol, capacity, associativity, block_size, stream, id)
+                Core::new(&protocol, cache_size, associativity, block_size, stream, id)
             })
             .collect();
         System {

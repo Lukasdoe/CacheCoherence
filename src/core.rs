@@ -2,20 +2,19 @@ use crate::alu::Alu;
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
-use crate::record::{Label, Record, RecordStream};
+use crate::record::{Label, RecordStream};
 
 pub struct Core {
     cache: Cache,
     alu: Alu,
     records: RecordStream,
-
     debug_id: usize,
 }
 
 impl Core {
     pub fn new(
         protocol: &ProtocolKind,
-        capacity: usize,
+        cache_size: usize,
         associativity: usize,
         block_size: usize,
         records: RecordStream,
@@ -24,7 +23,7 @@ impl Core {
         println!("{:?} loaded into Core {:?}", records.file_name, debug_id);
 
         Core {
-            cache: Cache::new(capacity, associativity, block_size, protocol),
+            cache: Cache::new(cache_size, associativity, block_size, protocol),
             alu: Alu::new(),
             records,
             debug_id,
@@ -47,7 +46,7 @@ impl Core {
             match (record.label, record.value) {
                 (Label::Load, value) => self.cache.load(value),
                 (Label::Store, value) => self.cache.store(value),
-                (Label::Other, value) => self.alu.set(value as isize),
+                (Label::Other, value) => self.alu.set(value),
             }
             // they still have a free step in this cycle!
             self.alu.update();

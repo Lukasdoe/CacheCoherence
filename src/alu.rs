@@ -1,5 +1,5 @@
 pub struct Alu {
-    cnt: isize,
+    cnt: u32,
 }
 
 impl Alu {
@@ -7,16 +7,25 @@ impl Alu {
         Alu { cnt: 0 }
     }
 
-    pub fn set(&mut self, value: isize) {
+    pub fn set(&mut self, value: u32) {
         self.cnt = value;
     }
 
+    pub fn get(&self) -> u32 {
+        self.cnt
+    }
+
+    pub fn increase(&mut self, value: u32) {
+        self.cnt += value;
+    }
+
     pub fn update(&mut self) -> bool {
-        let ret = self.cnt;
-        self.cnt -= 1;
-        if self.cnt < 0 {
-            self.cnt = 0;
+        match self.cnt {
+            0 => false,
+            c => {
+                self.cnt = c - 1;
+                true
+            }
         }
-        ret != 0
     }
 }

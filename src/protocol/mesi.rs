@@ -14,9 +14,9 @@ pub struct Mesi {
 }
 
 impl Mesi {
-    pub fn new(capacity: usize, associativity: usize, block_size: usize) -> Self {
+    pub fn new(cache_size: usize, associativity: usize, block_size: usize) -> Self {
         Mesi {
-            cache_state: Vec::with_capacity(capacity),
+            cache_state: Vec::with_capacity(cache_size),
         }
     }
 }

@@ -1,7 +1,8 @@
-use crate::{
-    cache,
-    protocol::{Protocol, ProtocolBuilder, ProtocolKind},
-};
+use std::fmt;
+
+use crate::alu::Alu;
+use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
+
 const ADDR_LEN: u32 = 32;
 const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
 const PLACEHOLDER_TAG: u32 = 0;
@@ -26,45 +27,48 @@ pub struct Cache {
     num_sets: usize,
     associativity: usize,
 
-    cnt: usize,
+    alu: Alu,
 }
 
 impl Cache {
     pub fn new(
-        capacity: usize,
+        cache_size: usize,
         associativity: usize,
         block_size: usize,
         kind: &ProtocolKind,
     ) -> Self {
-        let cache_set_size = associativity * block_size;
-        let num_sets = capacity / cache_set_size;
+        let set_size = associativity * block_size;
+        let num_sets = cache_size / set_size;
 
         // as integer logs are currently unstable, we have to be ugly
         let offset_length = ((block_size / 4) as f64).log2() as usize;
         let index_length = (num_sets as f64).log2() as usize;
+        let tag_length = 32 - (offset_length + index_length);
+        #[cfg(debug_assertions)]
+        println!("{:?} {:?} {:?}", offset_length, index_length, tag_length);
 
         #[cfg(debug_assertions)]
-        println!("Init cache of size {:?} bytes with {:?} sets of {:?} blocks, each a size of {:?} bytes.", 
-            capacity, num_sets, associativity, block_size);
+        println!("Init cache of size {:?} bytes with {:?} sets of {:?} blocks, each a size of {:?} bytes.",
+            cache_size, num_sets, associativity, block_size);
 
         Cache {
-            set_size: cache_set_size,
-            block_size: block_size,
-            cache_size: capacity,
+            set_size,
+            block_size,
+            cache_size,
 
             cache: vec![vec![PLACEHOLDER_TAG; associativity]; num_sets],
             lru_storage: vec![vec![0; associativity]; num_sets],
 
-            protocol: ProtocolBuilder::new(kind, capacity, associativity, block_size),
+            protocol: ProtocolBuilder::new(kind, cache_size, associativity, block_size),
 
-            offset_length: offset_length,
-            index_length: index_length,
-            tag_length: 32 - (offset_length + index_length),
+            offset_length,
+            index_length,
+            tag_length,
 
-            num_sets: num_sets,
-            associativity: associativity,
+            num_sets,
+            associativity,
 
-            cnt: 0,
+            alu: Alu::new(),
         }
     }
 
@@ -100,18 +104,12 @@ impl Cache {
         // For now: no valid dragon supported, no other cache can supply data
 
         self.update_lru();
-        match self.cnt {
-            0 => false,
-            c => {
-                self.cnt = c - 1;
-                true
-            }
-        }
+        self.alu.update()
     }
 
     /// Simulate a memory load operation.
     pub fn load(&mut self, addr: u32) {
-        assert!(self.cnt == 0);
+        assert!(self.alu.get() == 0);
 
         #[cfg(debug_assertions)]
         println!("Load of addr {:#x} requested (cache).", addr);
@@ -123,7 +121,7 @@ impl Cache {
         // TODO: implement protocol
 
         // cache lookup always takes 1 cycle
-        self.cnt += 1;
+        self.alu.increase(1);
 
         match self.search(addr) {
             Some((set_idx, block_idx)) => {
@@ -137,7 +135,7 @@ impl Cache {
                 println!("Miss!");
 
                 self.insert_and_evict(addr);
-                self.cnt += 100;
+                self.alu.increase(100);
             }
         }
     }
@@ -180,14 +178,8 @@ impl Cache {
     /// Returns first index of block in flat cache.
     fn search(&self, addr: u32) -> Option<(usize, usize)> {
         let set_idx = self.index(addr);
-        let cache_set = match self.cache.get(set_idx) {
-            Some(s) => s,
-            None => return None,
-        };
-        let block_idx = match self.search_cache_set(addr, cache_set) {
-            Some(s) => s,
-            None => return None,
-        };
+        let cache_set = self.cache.get(set_idx)?;
+        let block_idx = self.search_cache_set(addr, cache_set)?;
 
         #[cfg(debug_assertions)]
         println!(
