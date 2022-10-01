@@ -19,7 +19,7 @@ struct ProgramArgs {
     #[clap(value_parser)]
     cache_size: usize,
 
-    /// cache associativity in bytes
+    /// cache associativity
     #[clap(value_parser)]
     associativity: usize,
 
@@ -28,8 +28,26 @@ struct ProgramArgs {
     block_size: usize,
 }
 
+fn power_of_two(x: usize) -> bool {
+    return (x != 0) && ((x & (x - 1)) == 0);
+}
+
+fn check_args(args: &ProgramArgs) {
+    if !power_of_two(args.cache_size) {
+        panic!("Cache size must be a power of 2.");
+    }
+    if !power_of_two(args.associativity) {
+        panic!("Associativity must be a power of 2.");
+    }
+    if !power_of_two(args.block_size) {
+        panic!("Block size must be a power of 2.");
+    }
+}
+
 fn main() {
     let args = ProgramArgs::parse();
+    check_args(&args);
+
     let record_streams = match FileLoader::open(&args.input_file) {
         Ok(streams) => streams,
         Err(e) => {

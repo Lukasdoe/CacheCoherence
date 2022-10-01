@@ -1,3 +1,5 @@
+use std::any;
+
 use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
@@ -19,7 +21,10 @@ impl System {
     ) -> Self {
         let cores: Vec<Core> = record_streams
             .into_iter()
-            .map(|stream| Core::new(&protocol, capacity, associativity, block_size, stream))
+            .enumerate()
+            .map(|(id, stream)| {
+                Core::new(&protocol, capacity, associativity, block_size, stream, id)
+            })
             .collect();
         System {
             cores: cores,
@@ -28,13 +33,15 @@ impl System {
         }
     }
 
+    /// Execute one simulator step (one cycle) of the multi core system.
+    /// Returns true on end of simulation (all instructions executed).
     pub fn update(&mut self) -> bool {
-        for core in self.cores.iter_mut() {
-            core.step(&mut self.bus);
-        }
-
-
-
-        false
+        self.clk += 1;
+        !self
+            .cores
+            .iter_mut()
+            .map(|c| c.step(&mut self.bus))
+            .reduce(|acc, core_res| acc || core_res)
+            .unwrap_or(false)
     }
 }
