@@ -1,4 +1,5 @@
 use crate::bus::Bus;
+use crate::cache::CacheState;
 use crate::core::{Core, CoreState};
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
@@ -58,7 +59,7 @@ impl System {
             .unwrap_or(false)
     }
 
-    pub fn info(&self) -> Vec<&CoreState> {
+    pub fn info(&self) -> Vec<(&CoreState, &CacheState)> {
         self.cores.iter().map(|c| c.state()).collect()
     }
 }

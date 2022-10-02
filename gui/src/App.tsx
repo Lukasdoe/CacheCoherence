@@ -16,13 +16,23 @@ const App = () => {
   const [cores, setCores] = useState<CoreState[]>([]);
   const [system, setSystem] = useState<System>(defaultSystem);
 
+  const processData = (data: any) => {
+    const coreData = data.map(
+      ([coreState, cacheState]: any[], index: number) => {
+        const currentRecord =
+          cores.length > 0 ? cores[index].record : undefined;
+        return {
+          ...coreState,
+          record: coreState.record ? coreState.record : currentRecord,
+          cache: cacheState,
+        };
+      }
+    );
+    return coreData;
+  };
+
   const load = () => {
-    const postData = {
-      protocol: "Mesi",
-      cache_size: 256,
-      associativity: 2,
-      block_size: 8,
-    };
+    const postData = defaultSystem;
     fetch("http://127.0.0.1:8080/load", {
       method: "POST",
       body: JSON.stringify({
@@ -33,14 +43,16 @@ const App = () => {
       .then((response) => response.json())
       .then((data) => {
         setSystem(postData);
-        setCores(data);
+        setCores(processData(data));
       });
   };
 
   const step = () => {
     fetch("http://127.0.0.1:8080/step")
       .then((response) => response.json())
-      .then((data) => setCores(data));
+      .then((data) => {
+        setCores(processData(data));
+      });
   };
 
   return (

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::alu::Alu;
 use crate::bus::Bus;
-use crate::cache::Cache;
+use crate::cache::{Cache, CacheState};
 use crate::protocol::ProtocolKind;
 use crate::record::{Label, Record, RecordStream};
 
@@ -10,7 +10,7 @@ use crate::record::{Label, Record, RecordStream};
 pub struct CoreState {
     id: usize,
     record: Option<Record>,
-    cnt: u32,
+    alu: u32,
 }
 
 pub struct Core {
@@ -49,7 +49,7 @@ impl Core {
         self.state
             .id(self.debug_id)
             .record(None)
-            .cnt(self.alu.get());
+            .alu(self.alu.get());
 
         if self.alu.update() || self.cache.update() {
             return true;
@@ -67,7 +67,7 @@ impl Core {
                 (Label::Other, value) => self.alu.set(value),
             }
             // they still have a free step in this cycle!
-            self.state.record(Some(record)).cnt(self.alu.get());
+            self.state.record(Some(record)).alu(self.alu.get());
             self.alu.update();
             self.cache.update();
             true
@@ -76,24 +76,24 @@ impl Core {
         }
     }
 
-    pub fn state(&self) -> &CoreState {
-        &self.state
+    pub fn state(&self) -> (&CoreState, &CacheState) {
+        (&self.state, self.cache.state())
     }
 }
 
 impl CoreState {
-    pub fn id(&mut self, id: usize) -> &mut Self {
-        self.id = id;
+    pub fn id(&mut self, value: usize) -> &mut Self {
+        self.id = value;
         self
     }
 
-    pub fn record(&mut self, record: Option<Record>) -> &mut Self {
-        self.record = record;
+    pub fn record(&mut self, value: Option<Record>) -> &mut Self {
+        self.record = value;
         self
     }
 
-    pub fn cnt(&mut self, cnt: u32) -> &mut Self {
-        self.cnt = cnt;
+    pub fn alu(&mut self, value: u32) -> &mut Self {
+        self.alu = value;
         self
     }
 }

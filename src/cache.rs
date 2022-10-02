@@ -1,11 +1,23 @@
 use std::sync::Arc;
 
+use serde::Serialize;
+
 use crate::alu::Alu;
 use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
 
 const ADDR_LEN: u32 = 32;
 const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
 const PLACEHOLDER_TAG: u32 = 0;
+
+#[derive(Default, Serialize)]
+pub struct CacheState {
+    pub hit: usize,
+    pub miss: usize,
+    pub tag: u32,
+    pub index: usize,
+    pub block_offset: usize,
+    pub alu: u32,
+}
 
 pub struct Cache {
     cache: Vec<Vec<u32>>,
@@ -28,6 +40,7 @@ pub struct Cache {
     associativity: usize,
 
     alu: Alu,
+    state: CacheState,
 }
 
 impl Cache {
@@ -69,7 +82,12 @@ impl Cache {
             associativity,
 
             alu: Alu::new(),
+            state: CacheState::default(),
         }
+    }
+
+    pub fn state(&self) -> &CacheState {
+        &self.state
     }
 
     fn flat_to_nested(&self, block_idx: usize) -> (usize, usize) {
@@ -104,6 +122,7 @@ impl Cache {
         // For now: no valid dragon supported, no other cache can supply data
 
         self.update_lru();
+        self.state.alu(self.alu.get());
         self.alu.update()
     }
 
@@ -127,17 +146,21 @@ impl Cache {
             Some((set_idx, block_idx)) => {
                 #[cfg(debug_assertions)]
                 println!("Hit!");
-
+                self.state.hit(1);
                 self.log_access(set_idx, block_idx);
             }
             None => {
                 #[cfg(debug_assertions)]
                 println!("Miss!");
 
+                self.state.miss(1);
                 self.insert_and_evict(addr);
                 self.alu.increase(100);
             }
         }
+        let tag = self.tag(addr);
+        let index = self.index(addr);
+        self.state.tag(tag).index(index);
     }
 
     /// Simualate a memory store operation.
@@ -230,5 +253,37 @@ impl Cache {
 
         lru_cache_set[evict_idx] = 0;
         cache_set[evict_idx] = new_tag;
+    }
+}
+
+impl CacheState {
+    pub fn hit(&mut self, value: usize) -> &mut Self {
+        self.hit = value;
+        self
+    }
+
+    pub fn miss(&mut self, value: usize) -> &mut Self {
+        self.miss = value;
+        self
+    }
+
+    pub fn tag(&mut self, value: u32) -> &mut Self {
+        self.tag = value;
+        self
+    }
+
+    pub fn index(&mut self, value: usize) -> &mut Self {
+        self.index = value;
+        self
+    }
+
+    pub fn block_offset(&mut self, value: usize) -> &mut Self {
+        self.block_offset = value;
+        self
+    }
+
+    pub fn alu(&mut self, value: u32) -> &mut Self {
+        self.alu = value;
+        self
     }
 }
