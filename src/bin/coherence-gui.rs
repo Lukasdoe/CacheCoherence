@@ -7,6 +7,8 @@ use tide::Request;
 
 use cacher::*;
 
+type JsonResponse = Result<serde_json::value::Value, http_types::Error>;
+
 #[derive(Debug, Deserialize)]
 struct ProgramArgs {
     /// cache coherence protocol
@@ -44,24 +46,14 @@ async fn main() -> tide::Result<()> {
     let mut app = tide::with_state(state);
     app.with(cors);
     app.at("/load").post(load);
-    app.at("/cores").get(cores);
+    app.at("/step").get(step);
     app.listen("127.0.0.1:8080").await?;
     Ok(())
 }
 
-async fn cores(req: Request<State>) -> Result<serde_json::value::Value, http_types::Error> {
-    let state = req.state();
-    let system = state.client.lock().unwrap();
-    let len = system.cores.len();
-
-    Ok(json!({
-        "cores": len,
-    }))
-}
-
 /// Example
 /// curl localhost:8080/load -d '{ "protocol": "Mesi", "input_file": "data/01", "cache_size": 256, "associativity": 2, "block_size": 8 }'
-async fn load(mut req: Request<State>) -> tide::Result {
+async fn load(mut req: Request<State>) -> JsonResponse {
     let ProgramArgs {
         protocol,
         input_file,
@@ -91,5 +83,15 @@ async fn load(mut req: Request<State>) -> tide::Result {
         record_streams,
     );
 
-    Ok(format!("Successfully loaded system",).into())
+    let cores = system.info();
+    Ok(json!(cores))
+}
+
+async fn step(req: Request<State>) -> JsonResponse {
+    let state = req.state();
+    let mut system = state.client.lock().unwrap();
+    system.update();
+    let cores = system.info();
+
+    Ok(json!(cores))
 }

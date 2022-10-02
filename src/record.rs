@@ -1,14 +1,16 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 
-#[derive(Debug)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum Label {
     Load,
     Store,
     Other,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Record {
     pub label: Label,
     pub value: u32,
