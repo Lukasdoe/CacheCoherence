@@ -1,7 +1,5 @@
-use std::fmt;
-
-use crate::alu::Alu;
 use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
+use crate::utils::Counter;
 
 const ADDR_LEN: u32 = 32;
 const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
@@ -27,7 +25,7 @@ pub struct Cache {
     num_sets: usize,
     associativity: usize,
 
-    alu: Alu,
+    cnt: Counter,
 }
 
 impl Cache {
@@ -68,7 +66,7 @@ impl Cache {
             num_sets,
             associativity,
 
-            alu: Alu::new(),
+            cnt: Counter::new(),
         }
     }
 
@@ -104,12 +102,12 @@ impl Cache {
         // For now: no valid dragon supported, no other cache can supply data
 
         self.update_lru();
-        self.alu.update()
+        self.cnt.update()
     }
 
     /// Simulate a memory load operation.
     pub fn load(&mut self, addr: u32) {
-        assert!(self.alu.get() == 0);
+        assert!(self.cnt.value == 0);
 
         #[cfg(debug_assertions)]
         println!("Load of addr {:#x} requested (cache).", addr);
@@ -121,7 +119,7 @@ impl Cache {
         // TODO: implement protocol
 
         // cache lookup always takes 1 cycle
-        self.alu.increase(1);
+        self.cnt.value = 1;
 
         match self.search(addr) {
             Some((set_idx, block_idx)) => {
@@ -135,7 +133,7 @@ impl Cache {
                 println!("Miss!");
 
                 self.insert_and_evict(addr);
-                self.alu.increase(100);
+                self.cnt.value += 100;
             }
         }
     }

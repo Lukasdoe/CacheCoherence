@@ -1,12 +1,12 @@
-use crate::alu::Alu;
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
 use crate::record::{Label, RecordStream};
+use crate::utils::Counter;
 
 pub struct Core {
     cache: Cache,
-    alu: Alu,
+    alu: Counter,
     records: RecordStream,
     debug_id: usize,
 }
@@ -24,7 +24,7 @@ impl Core {
 
         Core {
             cache: Cache::new(cache_size, associativity, block_size, protocol),
-            alu: Alu::new(),
+            alu: Counter::new(),
             records,
             debug_id,
         }
@@ -46,7 +46,7 @@ impl Core {
             match (record.label, record.value) {
                 (Label::Load, value) => self.cache.load(value),
                 (Label::Store, value) => self.cache.store(value),
-                (Label::Other, value) => self.alu.set(value),
+                (Label::Other, value) => self.alu.value = value,
             }
             // they still have a free step in this cycle!
             self.alu.update();
