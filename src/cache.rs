@@ -1,5 +1,6 @@
 use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
 use crate::utils::Counter;
+use crate::LOGGER;
 
 const ADDR_LEN: u32 = 32;
 const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
@@ -100,9 +101,11 @@ impl Cache {
     pub fn update(&mut self) -> bool {
         // TODO: check back with bus
         // For now: no valid dragon supported, no other cache can supply data
-
         self.update_lru();
-        self.cnt.update()
+        let res = self.cnt.update();
+
+        LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
+        return res;
     }
 
     /// Simulate a memory load operation.
@@ -127,6 +130,12 @@ impl Cache {
                 println!("Hit!");
 
                 self.log_access(set_idx, block_idx);
+
+                LOGGER
+                    .lock()
+                    .unwrap()
+                    .log_cache_access(true, self.tag(addr), self.index(addr));
+                LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
             }
             None => {
                 #[cfg(debug_assertions)]
@@ -134,6 +143,12 @@ impl Cache {
 
                 self.insert_and_evict(addr);
                 self.cnt.value += 100;
+
+                LOGGER
+                    .lock()
+                    .unwrap()
+                    .log_cache_access(false, self.tag(addr), self.index(addr));
+                LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
             }
         }
     }
@@ -220,10 +235,21 @@ impl Cache {
             .max_by(|(_, i1), (_, i2)| i1.cmp(i2))
             .unwrap();
 
+        let old_tag = cache_set[evict_idx];
         #[cfg(debug_assertions)]
         println!(
             "Tag {:#x} evicted from cache, tag {:#x} loaded. (Set {:?}, Block {:?})",
-            cache_set[evict_idx], new_tag, set_idx, evict_idx
+            old_tag, new_tag, set_idx, evict_idx
+        );
+        LOGGER.lock().unwrap().log_cache_update(
+            if old_tag == PLACEHOLDER_TAG {
+                None
+            } else {
+                Some(old_tag)
+            },
+            new_tag,
+            set_idx,
+            evict_idx,
         );
 
         lru_cache_set[evict_idx] = 0;

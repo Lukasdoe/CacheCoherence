@@ -1,6 +1,5 @@
+use cacher::{FileLoader, ProtocolKind, System, LOGGER};
 use clap::Parser;
-
-use cacher::{FileLoader, ProtocolKind, System};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -72,4 +71,6 @@ fn main() {
             break;
         }
     }
+
+    LOGGER.lock().unwrap().read_to_stdout();
 }

@@ -1,3 +1,13 @@
+#[macro_use]
+extern crate lazy_static;
+
+use ::logger::Logger;
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref LOGGER: Mutex<Logger> = Mutex::new(Logger::new("binlog"));
+}
+
 mod bus;
 mod cache;
 mod core;

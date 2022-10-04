@@ -1,9 +1,8 @@
-use std::any;
-
 use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
+use crate::LOGGER;
 
 pub struct System {
     cores: Vec<Core>,
@@ -26,6 +25,14 @@ impl System {
                 Core::new(&protocol, cache_size, associativity, block_size, stream, id)
             })
             .collect();
+
+        LOGGER.lock().unwrap().log_env(
+            format!("{:?}", protocol),
+            cache_size,
+            associativity,
+            block_size,
+            cores.len(),
+        );
         System {
             cores: cores,
             bus: Bus::new(),
@@ -37,6 +44,8 @@ impl System {
     /// Returns true on end of simulation (all instructions executed).
     pub fn update(&mut self) -> bool {
         self.clk += 1;
+        LOGGER.lock().unwrap().log_step(self.clk);
+
         !self
             .cores
             .iter_mut()
