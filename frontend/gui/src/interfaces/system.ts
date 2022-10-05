@@ -1,8 +1,11 @@
-type System = {
+export type EnvInfo = {
   protocol: string;
   cache_size: number;
   associativity: number;
   block_size: number;
+  num_cores: number;
 };
 
-export default System;
+export type Step = {
+  clk: number;
+};

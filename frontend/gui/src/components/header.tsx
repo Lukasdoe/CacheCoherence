@@ -1,13 +1,13 @@
 type Props = {
+  next: () => void;
   load: () => void;
-  step: () => void;
 };
 
-const Header = ({ load, step }: Props) => {
+const Header = ({ next, load }: Props) => {
   return (
     <header>
       <button onClick={load}>load</button>
-      <button onClick={step}>step</button>
+      <button onClick={next}>next</button>
     </header>
   );
 };

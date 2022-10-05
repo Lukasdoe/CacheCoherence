@@ -1,5 +1,5 @@
 cli:
-	cargo run -- mesi ./data/01.zip 256 1 8
+	cargo run -- mesi ./data/01.zip 128 2 8
 
 build:
 	cargo build

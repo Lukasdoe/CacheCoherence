@@ -18,6 +18,14 @@ impl System {
         block_size: usize,
         record_streams: Vec<RecordStream>,
     ) -> Self {
+        LOGGER.lock().unwrap().log_env(
+            format!("{:?}", protocol),
+            cache_size,
+            associativity,
+            block_size,
+            record_streams.len(),
+        );
+
         let cores: Vec<Core> = record_streams
             .into_iter()
             .enumerate()
@@ -25,14 +33,6 @@ impl System {
                 Core::new(&protocol, cache_size, associativity, block_size, stream, id)
             })
             .collect();
-
-        LOGGER.lock().unwrap().log_env(
-            format!("{:?}", protocol),
-            cache_size,
-            associativity,
-            block_size,
-            cores.len(),
-        );
         System {
             cores: cores,
             bus: Bus::new(),

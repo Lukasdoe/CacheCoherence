@@ -1,4 +1,4 @@
-use cacher::{FileLoader, ProtocolKind, System, LOGGER};
+use cacher::{FileLoader, ProtocolKind, System};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -72,5 +72,5 @@ fn main() {
         }
     }
 
-    LOGGER.lock().unwrap().read_to_stdout();
+    logger::Logger::open_read("binlog").read_to_stdout();
 }

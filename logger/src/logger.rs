@@ -1,15 +1,16 @@
-use bincode::{
-    config::{self, Configuration},
-    error::DecodeError,
-    Decode, Encode,
-};
-use std::{fs::File, fs::OpenOptions, io::Seek};
+use bincode::config::{self, Configuration};
+use bincode::error::DecodeError;
+use bincode::serde::{decode_from_std_read, encode_into_std_write};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+
+use std::{fs::File, fs::OpenOptions};
 
 pub struct Logger {
     file: File,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum EntryType {
     EnvInfo,
     Step,
@@ -20,13 +21,13 @@ pub enum EntryType {
     CacheUpdate,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CoreInit {
     file_name: String,
     id: usize,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct EnvInfo {
     protocol: String,
     cache_size: usize,
@@ -35,33 +36,38 @@ pub struct EnvInfo {
     num_cores: usize,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Step {
     clk: u32,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CoreState {
     id: usize,
     record: Option<String>,
     alu_cnt: u32,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CacheState {
+    core_id: usize,
     cnt: u32,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CacheAccess {
+    core_id: usize,
+
     /// hit = true, miss = false
     hit_or_miss: bool,
     tag: u32,
     index: usize,
 }
 
-#[derive(Decode, Encode, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CacheUpdate {
+    core_id: usize,
+
     old_tag: Option<u32>,
     new_tag: u32,
     index: usize,
@@ -71,44 +77,47 @@ pub struct CacheUpdate {
 const DEFAULT_CONFIG: config::Configuration = config::standard();
 
 impl Logger {
-    pub fn new(path: &str) -> Logger {
-        let file = OpenOptions::new()
-            .write(true)
-            .read(true)
-            .create(true)
-            .append(false)
-            .truncate(true)
-            .open(path)
-            .expect(&format!("Could not open / create logfile \"{:?}\"", path));
-        Logger { file: file }
+    pub fn create(path: &str) -> Logger {
+        Logger {
+            file: OpenOptions::new()
+                .write(true)
+                .read(true)
+                .create(true)
+                .append(false)
+                .truncate(true)
+                .open(path)
+                .expect(&format!("Could not open / create logfile \"{:?}\"", path)),
+        }
     }
 
-    fn write<E: Encode>(&mut self, entry_type: EntryType, entry: E) {
-        bincode::encode_into_std_write(&entry_type, &mut self.file, DEFAULT_CONFIG).unwrap();
-        bincode::encode_into_std_write(&entry, &mut self.file, DEFAULT_CONFIG).unwrap();
+    pub fn open_read(path: &str) -> Logger {
+        Logger {
+            file: OpenOptions::new()
+                .read(true)
+                .open(path)
+                .expect(&format!("Could not open / create logfile \"{:?}\"", path)),
+        }
     }
 
-    /// Does not rewind log file.
+    fn write<E: Serialize>(&mut self, entry_type: EntryType, entry: E) {
+        encode_into_std_write(&entry_type, &mut self.file, DEFAULT_CONFIG).unwrap();
+        encode_into_std_write(&entry, &mut self.file, DEFAULT_CONFIG).unwrap();
+    }
+
     pub fn read_next_type(&mut self) -> Result<EntryType, DecodeError> {
-        return bincode::decode_from_std_read::<EntryType, Configuration, File>(
+        return decode_from_std_read::<EntryType, Configuration, File>(
             &mut self.file,
             DEFAULT_CONFIG,
         );
     }
 
-    /// Does not rewind log file.
-    pub fn read_next<D: Decode>(&mut self) -> Result<D, DecodeError> {
-        return bincode::decode_from_std_read::<D, Configuration, File>(
-            &mut self.file,
-            DEFAULT_CONFIG,
-        );
+    pub fn read_next<D: DeserializeOwned>(&mut self) -> Result<D, DecodeError> {
+        return decode_from_std_read::<D, Configuration, File>(&mut self.file, DEFAULT_CONFIG);
     }
 
-    /// Rewinds log file.
     pub fn read_to_stdout(&mut self) {
-        self.file.rewind().unwrap();
         loop {
-            let next_entry_info = bincode::decode_from_std_read::<EntryType, Configuration, File>(
+            let next_entry_info = decode_from_std_read::<EntryType, Configuration, File>(
                 &mut self.file,
                 DEFAULT_CONFIG,
             );
@@ -120,7 +129,7 @@ impl Logger {
             match next_entry_info.unwrap() {
                 EntryType::EnvInfo => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<EnvInfo, Configuration, File>(
+                    decode_from_std_read::<EnvInfo, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -128,7 +137,7 @@ impl Logger {
                 ),
                 EntryType::Step => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<Step, Configuration, File>(
+                    decode_from_std_read::<Step, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -136,7 +145,7 @@ impl Logger {
                 ),
                 EntryType::CoreInit => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<CoreInit, Configuration, File>(
+                    decode_from_std_read::<CoreInit, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -144,7 +153,7 @@ impl Logger {
                 ),
                 EntryType::CoreState => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<CoreState, Configuration, File>(
+                    decode_from_std_read::<CoreState, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -152,7 +161,7 @@ impl Logger {
                 ),
                 EntryType::CacheState => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<CacheState, Configuration, File>(
+                    decode_from_std_read::<CacheState, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -160,7 +169,7 @@ impl Logger {
                 ),
                 EntryType::CacheAccess => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<CacheAccess, Configuration, File>(
+                    decode_from_std_read::<CacheAccess, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -168,7 +177,7 @@ impl Logger {
                 ),
                 EntryType::CacheUpdate => println!(
                     "{:?}",
-                    bincode::decode_from_std_read::<CacheUpdate, Configuration, File>(
+                    decode_from_std_read::<CacheUpdate, Configuration, File>(
                         &mut self.file,
                         DEFAULT_CONFIG
                     )
@@ -224,14 +233,15 @@ impl Logger {
         )
     }
 
-    pub fn log_cache_state(&mut self, cnt: u32) {
-        self.write(EntryType::CacheState, CacheState { cnt })
+    pub fn log_cache_state(&mut self, core_id: usize, cnt: u32) {
+        self.write(EntryType::CacheState, CacheState { core_id, cnt })
     }
 
-    pub fn log_cache_access(&mut self, hit_or_miss: bool, tag: u32, index: usize) {
+    pub fn log_cache_access(&mut self, core_id: usize, hit_or_miss: bool, tag: u32, index: usize) {
         self.write(
             EntryType::CacheAccess,
             CacheAccess {
+                core_id,
                 hit_or_miss,
                 tag,
                 index,
@@ -241,6 +251,7 @@ impl Logger {
 
     pub fn log_cache_update(
         &mut self,
+        core_id: usize,
         old_tag: Option<u32>,
         new_tag: u32,
         index: usize,
@@ -249,6 +260,7 @@ impl Logger {
         self.write(
             EntryType::CacheUpdate,
             CacheUpdate {
+                core_id,
                 old_tag,
                 new_tag,
                 index,

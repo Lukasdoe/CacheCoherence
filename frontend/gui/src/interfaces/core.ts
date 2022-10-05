@@ -1,11 +1,5 @@
-import Record from "./record";
-import CacheState from "./cache";
-
-type CoreState = {
+export type CoreState = {
   id: number;
-  alu: number;
-  record: Record;
-  cache: CacheState;
+  record: string;
+  alu_cnt: number;
 };
-
-export default CoreState;

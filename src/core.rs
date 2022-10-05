@@ -9,7 +9,7 @@ pub struct Core {
     cache: Cache,
     alu: Counter,
     records: RecordStream,
-    debug_id: usize,
+    id: usize,
 }
 
 impl Core {
@@ -19,19 +19,16 @@ impl Core {
         associativity: usize,
         block_size: usize,
         records: RecordStream,
-        debug_id: usize,
+        id: usize,
     ) -> Self {
-        println!("{:?} loaded into Core {:?}", records.file_name, debug_id);
-        LOGGER
-            .lock()
-            .unwrap()
-            .log_core_init(&records.file_name, debug_id);
+        println!("{:?} loaded into Core {:?}", records.file_name, id);
+        LOGGER.lock().unwrap().log_core_init(&records.file_name, id);
 
         Core {
-            cache: Cache::new(cache_size, associativity, block_size, protocol),
+            cache: Cache::new(id, cache_size, associativity, block_size, protocol),
             alu: Counter::new(),
             records,
-            debug_id,
+            id,
         }
     }
 
@@ -42,7 +39,7 @@ impl Core {
             LOGGER
                 .lock()
                 .unwrap()
-                .log_core_state(self.debug_id, None, self.alu.value);
+                .log_core_state(self.id, None, self.alu.value);
             return true;
         }
 
@@ -50,7 +47,7 @@ impl Core {
             #[cfg(debug_assertions)]
             println!(
                 "({:?}) Processing: {:?} {:#x}",
-                self.debug_id, record.label, record.value
+                self.id, record.label, record.value
             );
             match (&record.label, record.value) {
                 (Label::Load, ref value) => self.cache.load(*value),
@@ -63,8 +60,8 @@ impl Core {
 
             // TODO: should this be after the update?
             LOGGER.lock().unwrap().log_core_state(
-                self.debug_id,
-                Some(format!("{:?}", record)),
+                self.id,
+                Some(format!("{:?} {:?}", record.label, record.value)),
                 self.alu.value,
             );
             true

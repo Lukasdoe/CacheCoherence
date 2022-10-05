@@ -7,6 +7,7 @@ const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
 const PLACEHOLDER_TAG: u32 = 0;
 
 pub struct Cache {
+    core_id: usize,
     cache: Vec<Vec<u32>>,
     lru_storage: Vec<Vec<usize>>,
 
@@ -31,6 +32,7 @@ pub struct Cache {
 
 impl Cache {
     pub fn new(
+        core_id: usize,
         cache_size: usize,
         associativity: usize,
         block_size: usize,
@@ -51,6 +53,8 @@ impl Cache {
             cache_size, num_sets, associativity, block_size);
 
         Cache {
+            core_id,
+
             set_size,
             block_size,
             cache_size,
@@ -104,7 +108,10 @@ impl Cache {
         self.update_lru();
         let res = self.cnt.update();
 
-        LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
+        LOGGER
+            .lock()
+            .unwrap()
+            .log_cache_state(self.core_id, self.cnt.value);
         return res;
     }
 
@@ -131,11 +138,16 @@ impl Cache {
 
                 self.log_access(set_idx, block_idx);
 
+                LOGGER.lock().unwrap().log_cache_access(
+                    self.core_id,
+                    true,
+                    self.tag(addr),
+                    self.index(addr),
+                );
                 LOGGER
                     .lock()
                     .unwrap()
-                    .log_cache_access(true, self.tag(addr), self.index(addr));
-                LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
+                    .log_cache_state(self.core_id, self.cnt.value);
             }
             None => {
                 #[cfg(debug_assertions)]
@@ -144,11 +156,16 @@ impl Cache {
                 self.insert_and_evict(addr);
                 self.cnt.value += 100;
 
+                LOGGER.lock().unwrap().log_cache_access(
+                    self.core_id,
+                    false,
+                    self.tag(addr),
+                    self.index(addr),
+                );
                 LOGGER
                     .lock()
                     .unwrap()
-                    .log_cache_access(false, self.tag(addr), self.index(addr));
-                LOGGER.lock().unwrap().log_cache_state(self.cnt.value);
+                    .log_cache_state(self.core_id, self.cnt.value);
             }
         }
     }
@@ -242,6 +259,7 @@ impl Cache {
             old_tag, new_tag, set_idx, evict_idx
         );
         LOGGER.lock().unwrap().log_cache_update(
+            self.core_id,
             if old_tag == PLACEHOLDER_TAG {
                 None
             } else {
