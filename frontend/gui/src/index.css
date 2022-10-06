@@ -26,6 +26,11 @@ header {
   border-radius: 5px;
 }
 
+span {
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
 button {
   background-color: transparent;
   color: white;

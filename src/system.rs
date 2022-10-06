@@ -3,6 +3,7 @@ use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
 use crate::LOGGER;
+use logger::{EnvInfo, LogEntry, Step};
 
 pub struct System {
     cores: Vec<Core>,
@@ -18,13 +19,13 @@ impl System {
         block_size: usize,
         record_streams: Vec<RecordStream>,
     ) -> Self {
-        LOGGER.lock().unwrap().log_env(
-            format!("{:?}", protocol),
+        LOGGER.write(LogEntry::EnvInfo(EnvInfo {
+            protocol: format!("{:?}", protocol),
             cache_size,
             associativity,
             block_size,
-            record_streams.len(),
-        );
+            num_cores: record_streams.len(),
+        }));
 
         let cores: Vec<Core> = record_streams
             .into_iter()
@@ -44,13 +45,25 @@ impl System {
     /// Returns true on end of simulation (all instructions executed).
     pub fn update(&mut self) -> bool {
         self.clk += 1;
-        LOGGER.lock().unwrap().log_step(self.clk);
+        LOGGER.write(LogEntry::Step(Step { clk: self.clk }));
 
-        !self
-            .cores
-            .iter_mut()
-            .map(|c| c.step(&mut self.bus))
-            .reduce(|acc, core_res| acc || core_res)
-            .unwrap_or(false)
+        // "at_least_one_core_is_still_working"
+        let mut alocisw = false;
+
+        // run 1: parse new instructions / update state
+        for core in self.cores.iter_mut() {
+            alocisw = core.step(&mut self.bus) || alocisw;
+        }
+
+        // run 2: snoop other cores' actions
+        for core in self.cores.iter_mut() {
+            core.snoop(&mut self.bus);
+        }
+
+        // run 3: cleanup after bus snooping
+        for core in self.cores.iter_mut() {
+            core.after_snoop(&mut self.bus);
+        }
+        return !alocisw;
     }
 }

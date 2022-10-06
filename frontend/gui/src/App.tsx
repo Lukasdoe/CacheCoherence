@@ -10,9 +10,15 @@ import { CacheAccess, CacheState, CacheUpdate } from "./interfaces/cache";
 const App = () => {
   const [cores, setCores] = useState<CoreState[]>([]);
 
-  const processLoad = ([type, data]: [any, any]) => {
-    if (type === "EnvInfo") {
-      const parsed_data = data as EnvInfo;
+  const handleKeydown = (e: any) => {
+    if (e.key === "ArrowRight") {
+      next();
+    }
+  };
+
+  const processLoad = (data: any) => {
+    if (Object.hasOwn(data, "EnvInfo")) {
+      const parsed_data = data.EnvInfo as EnvInfo;
       setCores(
         Array(parsed_data.num_cores)
           .fill(0)
@@ -47,85 +53,91 @@ const App = () => {
     }
   };
 
-  const processData = ([type, data]: [any, any]) => {
-    if (type === "Step") {
-      const parsed_data = data as Step;
-      setCores(
-        cores.map((c, i) => {
-          return {
-            ...c,
-            system: {
-              ...c.system,
-              clk: parsed_data.clk,
-            },
-          };
-        })
-      );
-    }
-    if (type === "CoreInit") {
-      // skip
-    }
-    if (type === "CoreState") {
-      const parsed_data = data as APICoreState;
-      setCores(
-        cores.map((c, i) => {
-          return i == parsed_data.id
-            ? {
+  const processData = (data_list: [any]) => {
+    let core_state = cores;
+    for (const data of data_list) {
+      switch (Object.keys(data)[0]) {
+        case "Step":
+          {
+            let parsed_data = data.Step as Step;
+            core_state = core_state.map((c, i) => {
+              return {
                 ...c,
-                record: parsed_data.record,
-                alu_cnt: parsed_data.alu_cnt,
-              }
-            : c;
-        })
-      );
-    }
-    if (type === "CacheState") {
-      const parsed_data = data as CacheState;
-      setCores(
-        cores.map((c, i) => {
-          return i == parsed_data.core_id
-            ? {
-                ...c,
-                cache: {
-                  ...c.cache,
-                  cnt: parsed_data.cnt,
+                system: {
+                  ...c.system,
+                  clk: parsed_data.clk,
                 },
-              }
-            : c;
-        })
-      );
-    }
-    if (type === "CacheAccess") {
-      const parsed_data = data as CacheAccess;
-      setCores(
-        cores.map((c, i) => {
-          return i == parsed_data.core_id
-            ? {
-                ...c,
-                cache: {
-                  ...c.cache,
-                  hit: parsed_data.hit_or_miss,
-                  miss: !parsed_data.hit_or_miss,
-                  tag: parsed_data.tag,
-                  index: parsed_data.index,
-                },
-              }
-            : c;
-        })
-      );
-    }
-    if (type === "CacheUpdate") {
-      const parsed_data = data as CacheUpdate;
-      setCores(
-        cores.map((c, i) => {
-          if (i == parsed_data.core_id) {
-            c.cache.inv[parsed_data.index][parsed_data.block] =
-              parsed_data.new_tag;
+              };
+            });
+            console.log(parsed_data.clk);
           }
-          return c;
-        })
-      );
+          break;
+        case "CoreState":
+          {
+            let parsed_data = data.CoreState as APICoreState;
+            core_state = core_state.map((c, i) => {
+              return i == parsed_data.id
+                ? {
+                    ...c,
+                    record: parsed_data.record,
+                    alu_cnt: parsed_data.alu_cnt,
+                  }
+                : c;
+            });
+          }
+          break;
+        case "CacheState":
+          {
+            let parsed_data = data.CacheState as CacheState;
+            core_state = core_state.map((c, i) => {
+              return i == parsed_data.core_id
+                ? {
+                    ...c,
+                    cache: {
+                      ...c.cache,
+                      cnt: parsed_data.cnt,
+                    },
+                  }
+                : c;
+            });
+          }
+          break;
+        case "CacheAccess":
+          {
+            let parsed_data = data.CacheAccess as CacheAccess;
+            core_state = core_state.map((c, i) => {
+              return i == parsed_data.core_id
+                ? {
+                    ...c,
+                    cache: {
+                      ...c.cache,
+                      hit: parsed_data.hit_or_miss,
+                      miss: !parsed_data.hit_or_miss,
+                      tag: parsed_data.tag,
+                      index: parsed_data.index,
+                    },
+                  }
+                : c;
+            });
+          }
+          break;
+        case "CacheUpdate":
+          {
+            let parsed_data = data.CacheUpdate as CacheUpdate;
+            core_state = core_state.map((c, i) => {
+              if (i == parsed_data.core_id) {
+                c.cache.inv[parsed_data.index][parsed_data.block] =
+                  parsed_data.new_tag;
+              }
+              return c;
+            });
+          }
+          break;
+        case "CoreInit":
+          break;
+      }
     }
+    setCores(core_state);
   };
 
   const next = () => {
@@ -141,8 +153,8 @@ const App = () => {
   };
 
   return (
-    <div className="app">
-      <Header load={load} next={next} />
+    <div className="app" tabIndex={0} onKeyDown={handleKeydown}>
+      <Header load={load} next={next} cycle={cores[0].system.clk} />
       <div className="cores">
         {cores.map((core: CoreState) => (
           <Core key={core.id} state={core} />

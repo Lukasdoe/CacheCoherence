@@ -1,4 +1,3 @@
-use async_std::sync::Mutex;
 use http_types::headers::HeaderValue;
 use logger::*;
 use tide::prelude::*;
@@ -10,10 +9,8 @@ type JsonResponse = Result<serde_json::value::Value, http_types::Error>;
 #[macro_use]
 extern crate lazy_static;
 
-use ::logger::Logger;
-
 lazy_static! {
-    pub static ref LOGGER: Mutex<Logger> = Mutex::new(Logger::open_read("../binlog"));
+    pub static ref LOGGER: Logger = Logger::new();
 }
 
 #[async_std::main]
@@ -32,44 +29,23 @@ async fn main() -> tide::Result<()> {
 }
 
 async fn load(_: Request<()>) -> JsonResponse {
-    let mut logger = LOGGER.lock().await;
-    *logger = Logger::open_read("../binlog");
-    let next_type = logger.read_next_type().unwrap();
-    assert!(next_type == EntryType::EnvInfo);
-    Ok(json!((next_type, logger.read_next::<EnvInfo>().unwrap())))
+    LOGGER.open_read("../binlog");
+    match LOGGER.read() {
+        Some(LogEntry::EnvInfo(env_info)) => Ok(json!(LogEntry::EnvInfo(env_info))),
+        _ => panic!("Invalid log format"),
+    }
 }
 
 async fn next(_: Request<()>) -> JsonResponse {
-    let mut logger = LOGGER.lock().await;
-    let next_type = logger.read_next_type().unwrap();
-    return match next_type {
-        EntryType::EnvInfo => Ok(json!((
-            EntryType::EnvInfo,
-            logger.read_next::<EnvInfo>().unwrap()
-        ))),
-        EntryType::CoreInit => Ok(json!((
-            EntryType::CoreInit,
-            logger.read_next::<CoreInit>().unwrap()
-        ))),
-        EntryType::CacheAccess => Ok(json!((
-            EntryType::CacheAccess,
-            logger.read_next::<CacheAccess>().unwrap()
-        ))),
-        EntryType::CacheState => Ok(json!((
-            EntryType::CacheState,
-            logger.read_next::<CacheState>().unwrap()
-        ))),
-        EntryType::Step => Ok(json!((
-            EntryType::Step,
-            logger.read_next::<Step>().unwrap()
-        ))),
-        EntryType::CacheUpdate => Ok(json!((
-            EntryType::CacheUpdate,
-            logger.read_next::<CacheUpdate>().unwrap()
-        ))),
-        EntryType::CoreState => Ok(json!((
-            EntryType::CoreState,
-            logger.read_next::<CoreState>().unwrap()
-        ))),
-    };
+    let mut entry_list: Vec<LogEntry> = Vec::new();
+    while entry_list.last().map_or(true, |last| match last {
+        LogEntry::Step(_) => false,
+        _ => true,
+    }) {
+        match LOGGER.read() {
+            Some(entry) => entry_list.push(entry),
+            None => break,
+        }
+    }
+    return Ok(json!(entry_list));
 }

@@ -1,6 +1,11 @@
-use crate::protocol::{Protocol, ProtocolBuilder, ProtocolKind};
+use std::collections::VecDeque;
+
+use crate::bus::BusAction;
+use crate::bus::Task;
+use crate::protocol::{ProcessorAction, Protocol, ProtocolBuilder, ProtocolKind};
 use crate::utils::Counter;
-use crate::LOGGER;
+use crate::{Bus, LOGGER};
+use logger::*;
 
 const ADDR_LEN: u32 = 32;
 const ADDR_MASK_BLANK: u32 = (2_u64.pow(ADDR_LEN) - 1) as u32;
@@ -27,7 +32,8 @@ pub struct Cache {
     num_sets: usize,
     associativity: usize,
 
-    cnt: Counter,
+    // Queue of waiting instructions (address, action)
+    scheduled_instructions: VecDeque<(u32, ProcessorAction)>,
 }
 
 impl Cache {
@@ -62,7 +68,13 @@ impl Cache {
             cache: vec![vec![PLACEHOLDER_TAG; associativity]; num_sets],
             lru_storage: vec![vec![0; associativity]; num_sets],
 
-            protocol: ProtocolBuilder::new(kind, cache_size, associativity, block_size),
+            protocol: ProtocolBuilder::new(
+                core_id as u32,
+                kind,
+                cache_size,
+                associativity,
+                block_size,
+            ),
 
             offset_length,
             index_length,
@@ -71,8 +83,45 @@ impl Cache {
             num_sets,
             associativity,
 
-            cnt: Counter::new(),
+            scheduled_instructions: VecDeque::new(),
         }
+    }
+
+    /// Simulate a memory load operation.
+    pub fn load(&mut self, addr: u32) {
+        self.scheduled_instructions
+            .push_back((addr, ProcessorAction::Read));
+    }
+
+    /// Simualate a memory store operation.
+    pub fn store(&mut self, addr: u32) {
+        self.scheduled_instructions
+            .push_back((addr, ProcessorAction::Write));
+    }
+
+    /// Advance internal counters.
+    /// Returns true iff the cache stalls.
+    pub fn update(&mut self, bus: &mut Bus) -> bool {
+        self.update_lru();
+
+        // we currently write to the bus => better back off until this is finished
+        if bus.occupied()
+            && bus.active_task().unwrap().issuer_id == self.core_id.try_into().unwrap()
+        {
+            return true;
+        }
+
+        if let Some((addr, action)) = self.scheduled_instructions.pop_front() {
+            if !match action {
+                ProcessorAction::Read => self.internal_load(addr, bus),
+                ProcessorAction::Write => self.internal_store(addr, bus),
+            } {
+                // Action couldn't be completed now, try again next cycle.
+                self.scheduled_instructions.push_front((addr, action));
+            }
+            return true;
+        }
+        return false;
     }
 
     fn flat_to_nested(&self, block_idx: usize) -> (usize, usize) {
@@ -100,85 +149,65 @@ impl Cache {
         }
     }
 
-    /// Advance internal counters.
-    /// Returns true iff the cache stalls.
-    pub fn update(&mut self) -> bool {
-        // TODO: check back with bus
-        // For now: no valid dragon supported, no other cache can supply data
-        self.update_lru();
-        let res = self.cnt.update();
-
-        LOGGER
-            .lock()
-            .unwrap()
-            .log_cache_state(self.core_id, self.cnt.value);
-        return res;
-    }
-
-    /// Simulate a memory load operation.
-    pub fn load(&mut self, addr: u32) {
-        assert!(self.cnt.value == 0);
-
+    /// Returns true if the operation could be completed / scheduled
+    fn internal_load(&mut self, addr: u32, bus: &mut Bus) -> bool {
         #[cfg(debug_assertions)]
         println!("Load of addr {:#x} requested (cache).", addr);
 
-        // println!("== Cache State ==");
-        // self.print_cache();
-        // println!("== =========== ==");
+        let store_pos = self.search(addr);
 
-        // TODO: implement protocol
+        let evict_idx = self.get_evict_index(addr);
+        let write_back_required =
+            store_pos.is_none() && self.cache[evict_idx.0][evict_idx.1] != PLACEHOLDER_TAG;
 
-        // cache lookup always takes 1 cycle
-        self.cnt.value = 1;
-
-        match self.search(addr) {
-            Some((set_idx, block_idx)) => {
-                #[cfg(debug_assertions)]
-                println!("Hit!");
-
-                self.log_access(set_idx, block_idx);
-
-                LOGGER.lock().unwrap().log_cache_access(
-                    self.core_id,
-                    true,
-                    self.tag(addr),
-                    self.index(addr),
-                );
-                LOGGER
-                    .lock()
-                    .unwrap()
-                    .log_cache_state(self.core_id, self.cnt.value);
+        // first execute write_back, then care about loading / coherence of new value
+        if write_back_required {
+            if bus.occupied() {
+                return false;
             }
-            None => {
-                #[cfg(debug_assertions)]
-                println!("Miss!");
+            bus.put_on(self.core_id as u32, BusAction::Flush(self.tag(addr)));
 
-                self.insert_and_evict(addr);
-                self.cnt.value += 100;
-
-                LOGGER.lock().unwrap().log_cache_access(
-                    self.core_id,
-                    false,
-                    self.tag(addr),
-                    self.index(addr),
-                );
-                LOGGER
-                    .lock()
-                    .unwrap()
-                    .log_cache_state(self.core_id, self.cnt.value);
-            }
+            // clear cache for later insert
+            self.cache[evict_idx.0][evict_idx.1] = PLACEHOLDER_TAG;
+            // set LRU to high value, so this cell will be evicted next.
+            self.lru_storage[evict_idx.0][evict_idx.1] = usize::MAX / 2;
+            return false;
         }
+
+        // --- after this point, the optional write-back is already done => load new value!
+
+        let bus_action = self.protocol.processor_read(
+            self.tag(addr),
+            store_pos.map(|(set_idx, block_idx)| self.nested_to_flat(set_idx, block_idx)),
+            store_pos.is_some(),
+            bus,
+        );
+
+        if let Some(action) = bus_action {
+            if bus.occupied() {
+                return false;
+            }
+            bus.put_on(self.core_id as u32, action);
+        }
+
+        if let Some((set_idx, block_idx)) = store_pos {
+            self.log_access(set_idx, block_idx);
+        } else {
+            // the memory for this is already flushed to main memory
+            // TODO: should we flush to other cores?
+            self.insert_and_evict(addr);
+        }
+        return true;
     }
 
-    /// Simualate a memory store operation.
-    pub fn store(&mut self, addr: u32) {
+    /// Returns true if the operation could be completed / scheduled
+    fn internal_store(&mut self, addr: u32, bus: &mut Bus) -> bool {
         #[cfg(debug_assertions)]
         println!("Store to addr {:#x} requested (cache).", addr);
 
         // write-alloc cache => every write first induces a cache load!
         self.load(addr);
-
-        // TODO: implement protocol
+        return false;
     }
 
     fn index(&self, addr: u32) -> usize {
@@ -240,17 +269,26 @@ impl Cache {
         }
     }
 
+    fn get_evict_index(&self, addr_to_load: u32) -> (usize, usize) {
+        let set_idx = self.index(addr_to_load);
+        return (
+            set_idx,
+            self.lru_storage[set_idx]
+                .iter()
+                .enumerate()
+                .max_by(|(_, i1), (_, i2)| i1.cmp(i2))
+                .unwrap()
+                .0,
+        );
+    }
+
     fn insert_and_evict(&mut self, addr_to_load: u32) {
         let new_tag = self.tag(addr_to_load);
         let set_idx = self.index(addr_to_load);
+        let evict_idx = self.get_evict_index(addr_to_load).1;
 
         let cache_set = &mut self.cache[set_idx];
         let lru_cache_set = &mut self.lru_storage[set_idx];
-        let (evict_idx, _) = lru_cache_set
-            .iter()
-            .enumerate()
-            .max_by(|(_, i1), (_, i2)| i1.cmp(i2))
-            .unwrap();
 
         let old_tag = cache_set[evict_idx];
         #[cfg(debug_assertions)]
@@ -258,17 +296,17 @@ impl Cache {
             "Tag {:#x} evicted from cache, tag {:#x} loaded. (Set {:?}, Block {:?})",
             old_tag, new_tag, set_idx, evict_idx
         );
-        LOGGER.lock().unwrap().log_cache_update(
-            self.core_id,
-            if old_tag == PLACEHOLDER_TAG {
+        LOGGER.write(LogEntry::CacheUpdate(CacheUpdate {
+            core_id: self.core_id,
+            old_tag: if old_tag == PLACEHOLDER_TAG {
                 None
             } else {
                 Some(old_tag)
             },
-            new_tag,
-            set_idx,
-            evict_idx,
-        );
+            new_tag: new_tag,
+            index: set_idx,
+            block: evict_idx,
+        }));
 
         lru_cache_set[evict_idx] = 0;
         cache_set[evict_idx] = new_tag;

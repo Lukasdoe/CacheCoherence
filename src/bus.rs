@@ -1,40 +1,64 @@
 pub struct Bus {
-    // task: Option<Task>,
+    task: Option<Task>,
 }
 
 // MESI and Dragon bus actions combined
-// TODO: Dragon protocol requires differences for BusRd, whether being from other cache or memory
+#[derive(Clone)]
 pub enum BusAction {
-    BusRd,
-    BusRdX,
-    BusUpd,
-    Flush,
+    BusRdMem(u32),
+    BusRdShared(u32),
+    BusRdXMem(u32),
+    BusRdXShared(u32),
+    BusUpdMem(u32),
+    BusUpdShared(u32),
+    Flush(u32),
 }
 
+#[derive(Clone)]
 pub struct Task {
-    task_id: u32,
-    remaining_time: u32,
-}
-
-pub struct Transaction {
-    addr: usize,
-    action: BusAction,
+    pub issuer_id: u32,
+    pub remaining_cycles: u32,
+    pub action: BusAction,
 }
 
 impl Bus {
     pub fn new() -> Self {
-        Bus {}
+        Bus { task: None }
+    }
+
+    // pricelist
+    fn price(action: &BusAction) -> u32 {
+        match action {
+            BusAction::BusRdMem(_) => 100,
+            BusAction::BusRdShared(_) => 2,
+            BusAction::BusRdXMem(_) => 100,
+            BusAction::BusRdXShared(_) => 2,
+            BusAction::BusUpdMem(_) => 100,
+            BusAction::BusUpdShared(_) => 2,
+            BusAction::Flush(_) => 100,
+        }
     }
 
     pub fn check(task_id: u32) {
-
         // 1. Loop: Update bus, state and everything
         // 2. Loop: Snooping only, like S' vs S and S -> I
         // 3. Loop: Update state based on snooping results (dragon only)
     }
 
+    pub fn put_on(&mut self, issuer_id: u32, action: BusAction) {
+        assert!(self.task.is_none());
+        self.task = Some(Task {
+            issuer_id,
+            remaining_cycles: Bus::price(&action),
+            action: action,
+        });
+    }
+
     pub fn occupied(&self) -> bool {
-        // self.task.is_some()
-        return false;
+        self.task.is_some()
+    }
+
+    pub fn active_task(&self) -> Option<Task> {
+        self.task.clone()
     }
 }

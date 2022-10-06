@@ -1,3 +1,5 @@
+use logger::{CoreInit, CoreState};
+
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
@@ -22,7 +24,10 @@ impl Core {
         id: usize,
     ) -> Self {
         println!("{:?} loaded into Core {:?}", records.file_name, id);
-        LOGGER.lock().unwrap().log_core_init(&records.file_name, id);
+        LOGGER.write(logger::LogEntry::CoreInit(CoreInit {
+            file_name: records.file_name.clone(),
+            id: id,
+        }));
 
         Core {
             cache: Cache::new(id, cache_size, associativity, block_size, protocol),
@@ -35,11 +40,12 @@ impl Core {
     /// Simulate one cycle. Return false if no more instructions are left to process.
     pub fn step(&mut self, bus: &mut Bus) -> bool {
         // stall, if required. Remember: if they return false, then they didn't work yet.
-        if self.alu.update() || self.cache.update() {
-            LOGGER
-                .lock()
-                .unwrap()
-                .log_core_state(self.id, None, self.alu.value);
+        if self.alu.update() || self.cache.update(bus) {
+            LOGGER.write(logger::LogEntry::CoreState(CoreState {
+                id: self.id,
+                record: None,
+                alu_cnt: self.alu.value,
+            }));
             return true;
         }
 
@@ -56,17 +62,20 @@ impl Core {
             }
             // they still have a free step in this cycle!
             self.alu.update();
-            self.cache.update();
+            self.cache.update(bus);
 
-            // TODO: should this be after the update?
-            LOGGER.lock().unwrap().log_core_state(
-                self.id,
-                Some(format!("{:?} {:?}", record.label, record.value)),
-                self.alu.value,
-            );
+            LOGGER.write(logger::LogEntry::CoreState(CoreState {
+                id: self.id,
+                record: Some(format!("{:?} {:?}", record.label, record.value)),
+                alu_cnt: self.alu.value,
+            }));
             true
         } else {
             false
         }
     }
+
+    pub fn snoop(&mut self, bus: &mut Bus) {}
+
+    pub fn after_snoop(&mut self, bus: &mut Bus) {}
 }

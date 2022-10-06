@@ -1,3 +1,4 @@
+use cacher::LOGGER;
 use cacher::{FileLoader, ProtocolKind, System};
 use clap::Parser;
 
@@ -44,6 +45,8 @@ fn check_args(args: &ProgramArgs) {
 }
 
 fn main() {
+    LOGGER.open_create("binlog");
+
     let args = ProgramArgs::parse();
     check_args(&args);
 
@@ -71,6 +74,6 @@ fn main() {
             break;
         }
     }
-
-    logger::Logger::open_read("binlog").read_to_stdout();
+    LOGGER.open_read("binlog");
+    LOGGER.read_to_stdout();
 }
