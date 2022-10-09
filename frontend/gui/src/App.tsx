@@ -69,7 +69,6 @@ const App = () => {
                 },
               };
             });
-            console.log(parsed_data.clk);
           }
           break;
         case "CoreState":
@@ -154,7 +153,7 @@ const App = () => {
 
   return (
     <div className="app" tabIndex={0} onKeyDown={handleKeydown}>
-      <Header load={load} next={next} cycle={cores[0].system.clk} />
+      <Header load={load} next={next} cycle={cores[0]?.system.clk} />
       <div className="cores">
         {cores.map((core: CoreState) => (
           <Core key={core.id} state={core} />
