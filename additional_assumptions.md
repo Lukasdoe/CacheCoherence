@@ -10,3 +10,6 @@
 - A bus update always only transmits a single word, bus flushes always transmit a whole block.
   Flushes always also go to main memory and therefore require at least 100 cycles. Updates can go to
   other caches only, making them faster with about 2 cycles.
+- Dragon protocol: Bus flushes are only required for write backs. As long as the copy stays in the
+  cache, every "flush" in the diagram is replaced with a shared update action. No data is written to
+  main memory.

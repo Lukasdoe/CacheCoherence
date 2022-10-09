@@ -1,8 +1,10 @@
+use core::panic;
+
 use crate::bus::{Bus, BusAction, Task};
 
 use super::{ProcessorAction, Protocol};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum DragonState {
     E,
     Sc,
@@ -16,10 +18,10 @@ pub struct Dragon {
 }
 
 impl Dragon {
-    pub fn new(core_id: u32, cache_size: usize, associativity: usize, block_size: usize) -> Self {
+    pub fn new(core_id: u32, cache_size: usize, block_size: usize) -> Self {
         Dragon {
             core_id,
-            cache_state: vec![None; (cache_size / block_size)],
+            cache_state: vec![None; cache_size / block_size],
         }
     }
 
@@ -34,29 +36,28 @@ impl Dragon {
         assert!(action != ProcessorAction::Write || hit);
 
         // fills current_state with placeholder if hit == false.
-        let (current_state, _) =
-            &self.cache_state[flat_cache_idx.unwrap_or_default()].unwrap_or((DragonState::E, 0));
+        let current_state = &self.cache_state[flat_cache_idx.unwrap_or_default()];
 
         let (next_state, bus_transaction) = match (current_state, action, hit) {
             // HIT
-            (DragonState::E, ProcessorAction::Read, true) => (DragonState::E, None),
-            (DragonState::E, ProcessorAction::Write, true) => (DragonState::M, None),
+            (Some((DragonState::E, _)), ProcessorAction::Read, true) => (DragonState::E, None),
+            (Some((DragonState::E, _)), ProcessorAction::Write, true) => (DragonState::M, None),
 
-            (DragonState::Sc, ProcessorAction::Read, true) => (DragonState::Sc, None),
+            (Some((DragonState::Sc, _)), ProcessorAction::Read, true) => (DragonState::Sc, None),
 
             // check busupd for sharers, if some => DragonState::Sm
-            (DragonState::Sc, ProcessorAction::Write, true) => {
+            (Some((DragonState::Sc, _)), ProcessorAction::Write, true) => {
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
 
-            (DragonState::Sm, ProcessorAction::Read, true) => (DragonState::Sm, None),
+            (Some((DragonState::Sm, _)), ProcessorAction::Read, true) => (DragonState::Sm, None),
 
             // check busupd for sharers, if some => DragonState::Sm
-            (DragonState::Sm, ProcessorAction::Write, true) => {
+            (Some((DragonState::Sm, _)), ProcessorAction::Write, true) => {
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
 
-            (DragonState::M, _, true) => (DragonState::M, None),
+            (Some((DragonState::M, _)), _, true) => (DragonState::M, None),
 
             // MISS
             // check busupd for sharers, if none => DragonState::M
@@ -78,106 +79,108 @@ impl Dragon {
         self.cache_state
             .iter()
             .enumerate()
-            .find(|(_, stored)| stored.is_some() && stored.unwrap().1 == tag)
+            .find(|(_, stored)| stored.is_some() && stored.as_ref().unwrap().1 == tag)
             .map_or(None, |(idx, _)| Some(idx))
     }
 
-    fn bus_transition(&mut self, bus: &mut Bus) {
-        let task = bus.active_task();
-        if task.is_none() {
-            return;
+    fn bus_snoop_transition(&mut self, bus: &mut Bus) -> Option<Task> {
+        let mut task = match bus.active_task() {
+            Some(t) => t.clone(),
+            None => return None,
+        };
+        if task.issuer_id == self.core_id {
+            return None;
         }
-
-        match task.unwrap() {
-            // Event: We read using BusRdMem and some other core changed action to BusRdShared
-            // => Value is shared.
-            Task {
-                issuer_id: id,
-                action: BusAction::BusRdShared(tag),
-                ..
-            } => {
-                let idx = self.idx_of_tag(tag);
-                if id == self.core_id
-                    && idx.is_some()
-                    && self.cache_state[idx.unwrap()].0 == DragonState::M
-                {
-                    self.cache_state[idx.unwrap()] = (DragonState::Sm, tag)
-                }
-            }
-
+        let tag = *task.action;
+        let state = match self.idx_of_tag(tag) {
+            Some(idx) => &mut self.cache_state[idx],
+            None => return None,
+        };
+        match (
+            &task.action,
+            state.as_ref().map_or(DragonState::E, |value| value.0),
+        ) {
             // Event: Someone else reads our exclusive cache block
-            // => transition from E => Sc
-            Task {
-                issuer_id: id,
-                action: BusAction::BusRdShared(tag),
-                ..
-            } => {
-                let idx = self.idx_of_tag(tag);
-                if id != self.core_id
-                    && idx.is_some()
-                    && self.cache_state[idx.unwrap()].0 == DragonState::E
-                {
-                    self.cache_state[idx.unwrap()] = (DragonState::Sc, tag)
-                }
-            }
-
-            // Event: Someone else updates a block that we have in Sm
-            // => transition from Sm => Sc
-            Task {
-                issuer_id: id,
-                action: BusAction::BusRdShared(tag),
-                ..
-            } => {
-                let idx = self.idx_of_tag(tag);
-                if id != self.core_id
-                    && idx.is_some()
-                    && self.cache_state[idx.unwrap()].0 == DragonState::Sm
-                {
-                    self.cache_state[idx.unwrap()] = (DragonState::Sc, tag)
-                }
-            }
-
-            // Event: Someone else reads a block that we in M-state
-            // => transition from M => Sm and Flush
-            Task {
-                issuer_id: id,
-                action: BusAction::BusRdShared(tag),
-                ..
-            } => {
-                let idx = self.idx_of_tag(tag);
-                if id != self.core_id
-                    && idx.is_some()
-                    && self.cache_state[idx.unwrap()].0 == DragonState::M
-                {
-                    self.cache_state[idx.unwrap()] = (DragonState::Sm, tag)
-                }
-                // TODO: Flush
+            // => transition from E -> Sc, update bus transaction to shared, update task time
+            (BusAction::BusRdMem(_), DragonState::E) => {
+                *state = Some((DragonState::Sc, tag));
+                task.action = BusAction::BusRdShared(tag);
+                task.remaining_cycles = Bus::price(&task.action);
             }
 
             // Event: Someone else reads a block that we have in Sm-state
-            // => Flush
-            Task {
-                issuer_id: id,
-                action: BusAction::BusRdShared(tag),
-                ..
-            } => {
-                let idx = self.idx_of_tag(tag);
-                if id != self.core_id
-                    && idx.is_some()
-                    && self.cache_state[idx.unwrap()].0 == DragonState::M
-                {
-                    // TODO: Flush
-                }
+            // => Flush (in this case: change to read shared)
+            (BusAction::BusRdMem(_), DragonState::Sm) => {
+                task.action = BusAction::BusRdShared(tag);
+                task.remaining_cycles = Bus::price(&task.action);
+            }
+
+            // Event: Someone else updates a block that we have in Sm
+            // => transition from Sm -> Sc, update bus transaction to shared, update task time
+            (BusAction::BusUpdMem(_), DragonState::Sm) => {
+                *state = Some((DragonState::Sc, tag));
+                task.action = BusAction::BusUpdShared(tag);
+                task.remaining_cycles = Bus::price(&task.action);
+            }
+
+            // Event: Someone else reads a block that we have in M-state
+            // => transition from M -> Sm, change memory read transaction to update and flush
+            // We don't actually perform a flush, we just add the flush-time to the current read operation
+            (BusAction::BusRdMem(_), DragonState::M) => {
+                *state = Some((DragonState::Sm, tag));
+                task.action = BusAction::BusRdShared(tag);
+                task.remaining_cycles = Bus::price(&task.action);
+            }
+
+            // catch some buggy cases
+            (BusAction::BusRdShared(_), DragonState::E) => {
+                panic!()
             }
 
             // Ignore bus events that don't change anything
+            _ => return None,
+        }
+        return Some(task);
+    }
+
+    fn bus_after_snoop_transition(&mut self, bus: &mut Bus) {
+        let task = match bus.active_task() {
+            Some(t) => t.clone(),
+            None => return,
+        };
+        if task.issuer_id != self.core_id {
+            return;
+        }
+        let tag = *task.action;
+        let state = match self.idx_of_tag(tag) {
+            Some(idx) => &mut self.cache_state[idx],
+            None => return,
+        };
+        match (
+            &task.action,
+            state.as_ref().map_or(DragonState::E, |value| value.0),
+        ) {
+            // Event: We read using BusRdMem and some other core changed action to BusRdShared
+            // => Value is shared.
+            (BusAction::BusRdShared(_), DragonState::M) => {
+                *state = Some((DragonState::Sm, tag));
+            }
+
+            (BusAction::BusUpdShared(_), DragonState::M) => {
+                *state = Some((DragonState::Sm, tag));
+            }
+
+            (BusAction::BusRdShared(_), DragonState::E) => {
+                *state = Some((DragonState::Sc, tag));
+            }
+
             _ => (),
         }
     }
 }
 
 impl Protocol for Dragon {
-    fn processor_read(
+    fn read(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
@@ -187,7 +190,7 @@ impl Protocol for Dragon {
         self.processor_transition(tag, cache_idx, hit, ProcessorAction::Read, bus)
     }
 
-    fn processor_write(
+    fn write(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
@@ -197,7 +200,11 @@ impl Protocol for Dragon {
         self.processor_transition(tag, cache_idx, hit, ProcessorAction::Write, bus)
     }
 
-    fn bus_snoop(&mut self, bus: &mut Bus) {
-        self.bus_transition(bus)
+    fn snoop(&mut self, bus: &mut Bus) -> Option<Task> {
+        self.bus_snoop_transition(bus)
+    }
+
+    fn after_snoop(&mut self, bus: &mut Bus) {
+        self.bus_after_snoop_transition(bus)
     }
 }

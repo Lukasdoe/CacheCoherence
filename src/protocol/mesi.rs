@@ -24,7 +24,7 @@ impl Mesi {
 }
 
 impl Protocol for Mesi {
-    fn processor_read(
+    fn read(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
@@ -34,7 +34,7 @@ impl Protocol for Mesi {
         todo!()
     }
 
-    fn processor_write(
+    fn write(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
@@ -44,7 +44,11 @@ impl Protocol for Mesi {
         todo!()
     }
 
-    fn bus_snoop(&mut self, bus: &mut Bus) {
+    fn snoop(&mut self, bus: &mut Bus) -> Option<crate::bus::Task> {
+        todo!()
+    }
+
+    fn after_snoop(&mut self, bus: &mut Bus) {
         todo!()
     }
 }

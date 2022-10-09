@@ -1,7 +1,5 @@
-use crate::bus::{Bus, BusAction};
+use crate::bus::{Bus, BusAction, Task};
 use clap::ArgEnum;
-use std::vec::Vec;
-
 pub mod dragon;
 pub mod mesi;
 
@@ -12,21 +10,22 @@ pub enum ProcessorAction {
 }
 
 pub trait Protocol {
-    fn processor_read(
+    fn read(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction>;
-    fn processor_write(
+    fn write(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction>;
-    fn bus_snoop(&mut self, bus: &mut Bus);
+    fn snoop(&mut self, bus: &mut Bus) -> Option<Task>;
+    fn after_snoop(&mut self, bus: &mut Bus);
 }
 
 #[derive(Clone, Debug, ArgEnum)]
@@ -46,12 +45,7 @@ impl ProtocolBuilder {
         block_size: usize,
     ) -> Box<dyn Protocol> {
         match kind {
-            ProtocolKind::Dragon => Box::new(dragon::Dragon::new(
-                core_id,
-                cache_size,
-                associativity,
-                block_size,
-            )),
+            ProtocolKind::Dragon => Box::new(dragon::Dragon::new(core_id, cache_size, block_size)),
             ProtocolKind::Mesi => Box::new(mesi::Mesi::new(
                 core_id,
                 cache_size,

@@ -1,9 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::bus::BusAction;
-use crate::bus::Task;
 use crate::protocol::{ProcessorAction, Protocol, ProtocolBuilder, ProtocolKind};
-use crate::utils::Counter;
 use crate::{Bus, LOGGER};
 use logger::*;
 
@@ -124,6 +122,16 @@ impl Cache {
         return false;
     }
 
+    pub fn snoop(&mut self, bus: &mut Bus) {
+        self.protocol
+            .snoop(bus)
+            .map(|task| *bus.active_task().unwrap() = task);
+    }
+
+    pub fn after_snoop(&mut self, bus: &mut Bus) {
+        self.protocol.after_snoop(bus);
+    }
+
     fn flat_to_nested(&self, block_idx: usize) -> (usize, usize) {
         let number_of_blocks_in_set = self.set_size / self.block_size;
         let in_set_idx = block_idx % number_of_blocks_in_set;
@@ -176,7 +184,7 @@ impl Cache {
 
         // --- after this point, the optional write-back is already done => load new value!
 
-        let bus_action = self.protocol.processor_read(
+        let bus_action = self.protocol.read(
             self.tag(addr),
             store_pos.map(|(set_idx, block_idx)| self.nested_to_flat(set_idx, block_idx)),
             store_pos.is_some(),

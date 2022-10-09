@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 pub struct Bus {
     task: Option<Task>,
 }
@@ -14,6 +16,21 @@ pub enum BusAction {
     Flush(u32),
 }
 
+impl Deref for BusAction {
+    type Target = u32;
+    fn deref(&self) -> &u32 {
+        match self {
+            BusAction::BusRdMem(n) => n,
+            BusAction::BusRdShared(n) => n,
+            BusAction::BusRdXMem(n) => n,
+            BusAction::BusRdXShared(n) => n,
+            BusAction::BusUpdMem(n) => n,
+            BusAction::BusUpdShared(n) => n,
+            BusAction::Flush(n) => n,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Task {
     pub issuer_id: u32,
@@ -27,7 +44,7 @@ impl Bus {
     }
 
     // pricelist
-    fn price(action: &BusAction) -> u32 {
+    pub fn price(action: &BusAction) -> u32 {
         match action {
             BusAction::BusRdMem(_) => 100,
             BusAction::BusRdShared(_) => 2,
@@ -58,7 +75,7 @@ impl Bus {
         self.task.is_some()
     }
 
-    pub fn active_task(&self) -> Option<Task> {
-        self.task.clone()
+    pub fn active_task(&mut self) -> Option<&mut Task> {
+        self.task.as_mut()
     }
 }

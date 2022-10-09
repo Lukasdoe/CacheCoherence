@@ -75,7 +75,11 @@ impl Core {
         }
     }
 
-    pub fn snoop(&mut self, bus: &mut Bus) {}
+    pub fn snoop(&mut self, bus: &mut Bus) {
+        self.cache.snoop(bus);
+    }
 
-    pub fn after_snoop(&mut self, bus: &mut Bus) {}
+    pub fn after_snoop(&mut self, bus: &mut Bus) {
+        self.cache.after_snoop(bus);
+    }
 }
