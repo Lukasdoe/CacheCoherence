@@ -3,28 +3,39 @@ use clap::ArgEnum;
 pub mod dragon;
 pub mod mesi;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum ProcessorAction {
     Read,
     Write,
 }
 
 pub trait Protocol {
+    /// cache_idx contains the flat index of the already stored tag (if stored)
+    /// store_idx contains the address at which the tag would be stored (useful if not stored yet)
     fn read(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction>;
+
+    /// cache_idx contains the flat index of the already stored tag (if stored)
+    /// store_idx contains the address at which the tag would be stored (useful if not stored yet)
     fn write(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction>;
+
+    /// Reads bus state and eventually asks to change the current bus state (state transition)
     fn snoop(&mut self, bus: &mut Bus) -> Option<Task>;
+
+    /// applies internal protocol state changes based on final bus state
     fn after_snoop(&mut self, bus: &mut Bus);
 }
 

@@ -4,7 +4,7 @@ use crate::bus::{Bus, BusAction, Task};
 
 use super::{ProcessorAction, Protocol};
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum DragonState {
     E,
     Sc,
@@ -29,6 +29,7 @@ impl Dragon {
         &mut self,
         tag: u32,
         flat_cache_idx: Option<usize>,
+        flat_store_idx: usize,
         hit: bool,
         action: ProcessorAction,
         bus: &mut Bus,
@@ -38,7 +39,7 @@ impl Dragon {
         // fills current_state with placeholder if hit == false.
         let current_state = &self.cache_state[flat_cache_idx.unwrap_or_default()];
 
-        let (next_state, bus_transaction) = match (current_state, action, hit) {
+        let (next_state, bus_transaction) = match (current_state, &action, hit) {
             // HIT
             (Some((DragonState::E, _)), ProcessorAction::Read, true) => (DragonState::E, None),
             (Some((DragonState::E, _)), ProcessorAction::Write, true) => (DragonState::M, None),
@@ -60,18 +61,43 @@ impl Dragon {
             (Some((DragonState::M, _)), _, true) => (DragonState::M, None),
 
             // MISS
-            // check busupd for sharers, if none => DragonState::M
-            (_, ProcessorAction::Read, false) => (DragonState::Sc, Some(BusAction::BusRdMem(tag))),
+            // check busupd for sharers, if none => DragonState::E
+            (_, ProcessorAction::Read, false) => (DragonState::E, Some(BusAction::BusRdMem(tag))),
+
             // this can not occur:
             // (_, ProcessorAction::Write, false) => (DragonState::Sm, None),
-            _ => panic!("Unresolved processor event."),
+            _ => panic!(
+                "({:?}) Unresolved processor event: {:?}",
+                self.core_id,
+                (current_state, action, hit)
+            ),
         };
+        #[cfg(debug_assertions)]
+        println!(
+            "({:?}) Dragon: Require state transition: {:?} -> {:?}, bus: {:?}",
+            self.core_id,
+            current_state.map_or(None, |state| Some(state.0)),
+            next_state,
+            bus_transaction
+        );
 
         if bus_transaction.is_none() || !bus.occupied() {
             // Cache will issue bus action => already modifiy state
-            self.cache_state[flat_cache_idx.unwrap_or_default()] = Some((next_state, tag));
+            self.cache_state[flat_store_idx] = Some((next_state, tag));
+
+            #[cfg(debug_assertions)]
+            println!(
+                "({:?}) Dragon: protocol state successfully updated",
+                self.core_id
+            );
+        } else {
+            // else: bus is busy, cache will execute read / write again next cycle. "busy waiting"
+            #[cfg(debug_assertions)]
+            println!(
+                "({:?}) Dragon: protocol could not update: bus is busy and required.",
+                self.core_id
+            );
         }
-        // else: bus is busy, cache will execute read / write again next cycle. "busy waiting"
         return bus_transaction;
     }
 
@@ -184,20 +210,22 @@ impl Protocol for Dragon {
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction> {
-        self.processor_transition(tag, cache_idx, hit, ProcessorAction::Read, bus)
+        self.processor_transition(tag, cache_idx, store_idx, hit, ProcessorAction::Read, bus)
     }
 
     fn write(
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction> {
-        self.processor_transition(tag, cache_idx, hit, ProcessorAction::Write, bus)
+        self.processor_transition(tag, cache_idx, store_idx, hit, ProcessorAction::Write, bus)
     }
 
     fn snoop(&mut self, bus: &mut Bus) -> Option<Task> {

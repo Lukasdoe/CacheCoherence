@@ -13,3 +13,14 @@
 - Dragon protocol: Bus flushes are only required for write backs. As long as the copy stays in the
   cache, every "flush" in the diagram is replaced with a shared update action. No data is written to
   main memory.
+- Cache write-allocate: 
+  every write checks if the address is currently in cache. If not, it schedules a load and restarts
+  the check afterwards. Only if the check is successful (hit), the write is attempted. If another
+  cache invalidates the cache line between the read and the write, then the read has to be repeated.
+- A write to a cache line does not update its LRU-counter
+- Bus wait cycles are only counted beginning in the clock cycle AFTER the task was put on the bus.
+  This means that a writeback requires in total 101 cycles until the next action can be performed: 1
+  cycle to schedule the writeback and 100 cycles for the bus to finish the writeback to memory.
+- Caches block during their own bus transactions => the cache waits until its bus transaction is
+  finished until it commences with further steps (this is required to restart the transaction in
+  case something fails)

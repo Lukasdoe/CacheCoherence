@@ -28,6 +28,7 @@ struct ProgramArgs {
     block_size: usize,
 }
 
+// taken from https://stackoverflow.com/a/600306
 fn power_of_two(x: usize) -> bool {
     return (x != 0) && ((x & (x - 1)) == 0);
 }
@@ -74,6 +75,6 @@ fn main() {
             break;
         }
     }
-    LOGGER.open_read("binlog");
-    LOGGER.read_to_stdout();
+    // LOGGER.open_read("binlog");
+    // LOGGER.read_to_stdout();
 }

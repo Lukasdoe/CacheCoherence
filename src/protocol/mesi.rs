@@ -28,6 +28,7 @@ impl Protocol for Mesi {
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction> {
@@ -38,6 +39,7 @@ impl Protocol for Mesi {
         &mut self,
         tag: u32,
         cache_idx: Option<usize>,
+        store_idx: usize,
         hit: bool,
         bus: &mut Bus,
     ) -> Option<BusAction> {

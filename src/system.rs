@@ -45,6 +45,10 @@ impl System {
     /// Returns true on end of simulation (all instructions executed).
     pub fn update(&mut self) -> bool {
         self.clk += 1;
+        #[cfg(debug_assertions)]
+        println!("Step {:?}", self.clk);
+
+        self.bus.update();
         LOGGER.write(LogEntry::Step(Step { clk: self.clk }));
 
         // "at_least_one_core_is_still_working"
@@ -63,6 +67,10 @@ impl System {
         // run 3: cleanup after bus snooping
         for core in self.cores.iter_mut() {
             core.after_snoop(&mut self.bus);
+        }
+
+        if !alocisw {
+            println!("Finished after {:?} clock cycles.", self.clk);
         }
         return !alocisw;
     }

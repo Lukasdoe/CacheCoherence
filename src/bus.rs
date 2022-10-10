@@ -31,6 +31,20 @@ impl Deref for BusAction {
     }
 }
 
+impl std::fmt::Debug for BusAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BusAction::BusRdMem(n) => write!(f, "BusRdMem(0x{:x})", n),
+            BusAction::BusRdShared(n) => write!(f, "BusRdShared(0x{:x})", n),
+            BusAction::BusRdXMem(n) => write!(f, "BusRdXMem(0x{:x})", n),
+            BusAction::BusRdXShared(n) => write!(f, "BusRdXShared(0x{:x})", n),
+            BusAction::BusUpdMem(n) => write!(f, "BusUpdMem(0x{:x})", n),
+            BusAction::BusUpdShared(n) => write!(f, "BusUpdShared(0x{:x})", n),
+            BusAction::Flush(n) => write!(f, "Flush(0x{:x})", n),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Task {
     pub issuer_id: u32,
@@ -56,12 +70,6 @@ impl Bus {
         }
     }
 
-    pub fn check(task_id: u32) {
-        // 1. Loop: Update bus, state and everything
-        // 2. Loop: Snooping only, like S' vs S and S -> I
-        // 3. Loop: Update state based on snooping results (dragon only)
-    }
-
     pub fn put_on(&mut self, issuer_id: u32, action: BusAction) {
         assert!(self.task.is_none());
         self.task = Some(Task {
@@ -73,6 +81,33 @@ impl Bus {
 
     pub fn occupied(&self) -> bool {
         self.task.is_some()
+    }
+
+    pub fn update(&mut self) {
+        if !self.occupied() {
+            #[cfg(debug_assertions)]
+            println!("Bus: empty");
+            return;
+        }
+        let task = self.task.as_mut().unwrap();
+        match task.remaining_cycles {
+            0 => {
+                self.task = None;
+
+                #[cfg(debug_assertions)]
+                println!("Bus: empty");
+            }
+            i => {
+                task.remaining_cycles = i - 1;
+                #[cfg(debug_assertions)]
+                println!(
+                    "Bus: {:?} by {:?}, remaining: {:?}",
+                    self.task.as_ref().unwrap().action,
+                    self.task.as_ref().unwrap().issuer_id,
+                    self.task.as_ref().unwrap().remaining_cycles
+                );
+            }
+        }
     }
 
     pub fn active_task(&mut self) -> Option<&mut Task> {

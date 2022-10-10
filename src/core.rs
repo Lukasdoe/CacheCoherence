@@ -23,7 +23,7 @@ impl Core {
         records: RecordStream,
         id: usize,
     ) -> Self {
-        println!("{:?} loaded into Core {:?}", records.file_name, id);
+        println!("({:?}) loaded {:?}", id, records.file_name);
         LOGGER.write(logger::LogEntry::CoreInit(CoreInit {
             file_name: records.file_name.clone(),
             id: id,
@@ -52,7 +52,7 @@ impl Core {
         if let Some(record) = self.records.next() {
             #[cfg(debug_assertions)]
             println!(
-                "({:?}) Processing: {:?} {:#x}",
+                "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
             );
             match (&record.label, record.value) {
