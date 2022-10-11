@@ -7,6 +7,7 @@ impl Counter {
         Counter { value: 0 }
     }
 
+    /// Update counter. Returns false if counter reached 0.
     pub fn update(&mut self) -> bool {
         match self.value {
             0 => false,

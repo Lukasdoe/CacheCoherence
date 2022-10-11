@@ -8,7 +8,7 @@ pub struct Core {
     cache: Cache,
     alu: Counter,
     records: RecordStream,
-    debug_id: usize,
+    id: usize,
 }
 
 impl Core {
@@ -18,42 +18,50 @@ impl Core {
         associativity: usize,
         block_size: usize,
         records: RecordStream,
-        debug_id: usize,
+        id: usize,
     ) -> Self {
-        println!("{:?} loaded into Core {:?}", records.file_name, debug_id);
+        println!("({:?}) loaded {:?}", id, records.file_name);
 
         Core {
-            cache: Cache::new(cache_size, associativity, block_size, protocol),
+            cache: Cache::new(id, cache_size, associativity, block_size, protocol),
             alu: Counter::new(),
             records,
-            debug_id,
+            id,
         }
     }
 
     /// Simulate one cycle. Return false if no more instructions are left to process.
     pub fn step(&mut self, bus: &mut Bus) -> bool {
         // stall, if required. Remember: if they return false, then they didn't work yet.
-        if self.alu.update() || self.cache.update() {
+        if self.alu.update() || self.cache.update(bus) {
             return true;
         }
 
         if let Some(record) = self.records.next() {
             #[cfg(debug_assertions)]
             println!(
-                "({:?}) Processing: {:?} {:#x}",
-                self.debug_id, record.label, record.value
+                "({:?}) Processing new: {:?} {:#x}",
+                self.id, record.label, record.value
             );
-            match (record.label, record.value) {
-                (Label::Load, value) => self.cache.load(value),
-                (Label::Store, value) => self.cache.store(value),
-                (Label::Other, value) => self.alu.value = value,
+            match (&record.label, record.value) {
+                (Label::Load, ref value) => self.cache.load(*value),
+                (Label::Store, ref value) => self.cache.store(*value),
+                (Label::Other, ref value) => self.alu.value = *value,
             }
             // they still have a free step in this cycle!
             self.alu.update();
-            self.cache.update();
+            self.cache.update(bus);
             true
         } else {
             false
         }
+    }
+
+    pub fn snoop(&mut self, bus: &mut Bus) {
+        self.cache.snoop(bus);
+    }
+
+    pub fn after_snoop(&mut self, bus: &mut Bus) {
+        self.cache.after_snoop(bus);
     }
 }

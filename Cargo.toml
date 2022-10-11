@@ -11,4 +11,3 @@ name = "cacher"
 [dependencies]
 clap = { version = "3.2.22", features = ["derive"] }
 zip = "0.6.2"
-keyed_priority_queue = "0.4.1"

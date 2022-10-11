@@ -12,7 +12,9 @@ impl FileLoader {
         let zip_archive = ZipArchive::new(zip_file)?;
 
         let mut res_vec = Vec::new();
-        for file_name in zip_archive.file_names() {
+        let mut file_names: Vec<&str> = zip_archive.file_names().collect();
+        file_names.sort();
+        for file_name in file_names {
             let zip_archive = ZipArchive::new(File::open(path)?)?;
             let file_name = String::from(file_name);
             res_vec.push(RecordStream::new(file_name, zip_archive));

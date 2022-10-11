@@ -1,6 +1,5 @@
-use clap::Parser;
-
 use cacher::{FileLoader, ProtocolKind, System};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -28,6 +27,7 @@ struct ProgramArgs {
     block_size: usize,
 }
 
+// taken from https://stackoverflow.com/a/600306
 fn power_of_two(x: usize) -> bool {
     return (x != 0) && ((x & (x - 1)) == 0);
 }
