@@ -143,54 +143,59 @@ impl Cache {
             self.core_id, addr
         );
 
-        let store_pos = self.search(addr);
+        let loaded_tag = self.tag(addr);
+        let store_idx = self.search(addr);
+        let (evict_set, evict_block) = self.get_evict_index(addr);
+        let evict_tag = self.cache[evict_set][evict_block];
+        let flat_store_idx =
+            store_idx.map(|(set_idx, block_idx)| self.nested_to_flat(set_idx, block_idx));
+        let flat_evict_idx = self.nested_to_flat(evict_set, evict_block);
 
-        let evict_idx = self.get_evict_index(addr);
-        let write_back_required =
-            store_pos.is_none() && self.cache[evict_idx.0][evict_idx.1] != PLACEHOLDER_TAG;
-
-        // first execute write_back, then care about loading / coherence of new value
-        if write_back_required {
-            #[cfg(debug_assertions)]
-            println!(
-                "({:?}) Write_back required (cache line occupied)",
-                self.core_id
-            );
-
-            if bus.occupied() {
-                #[cfg(debug_assertions)]
-                println!("({:?}) Bus is busy, write back postponed", self.core_id);
-
-                return false;
-            }
-            bus.put_on(self.core_id as u32, BusAction::Flush(self.tag(addr)));
-
-            // clear cache for later insert
-            self.cache[evict_idx.0][evict_idx.1] = PLACEHOLDER_TAG;
-            // set LRU to high value, so this cell will be evicted next.
-            self.lru_storage[evict_idx.0][evict_idx.1] = usize::MAX / 2;
-
-            // TODO: is writeback always required? normally only after write...
-            // todo!();
-            #[cfg(debug_assertions)]
-            println!("({:?}) Writeback commissioned.", self.core_id);
-            return false;
-        }
-
-        // --- after this point, the optional write-back is already done => load new value!
-        if store_pos.is_some() {
+        if store_idx != None {
             #[cfg(debug_assertions)]
             println!("({:?}) Hit.", self.core_id);
         } else {
             #[cfg(debug_assertions)]
             println!("({:?}) Miss.", self.core_id);
-        }
 
+            let writeback_required = store_idx.is_none()
+                && evict_tag != PLACEHOLDER_TAG
+                && self.protocol.writeback_required(flat_evict_idx, evict_tag);
+
+            // first execute write_back, then care about loading / coherence of new value
+            if writeback_required {
+                #[cfg(debug_assertions)]
+                println!(
+                    "({:?}) Writeback required (cache line occupied and cache is owner)",
+                    self.core_id
+                );
+
+                if bus.occupied() {
+                    #[cfg(debug_assertions)]
+                    println!("({:?}) Bus is busy, write back postponed", self.core_id);
+
+                    return false;
+                }
+                bus.put_on(self.core_id as u32, BusAction::Flush(self.tag(addr)));
+
+                // clear cache for later insert
+                self.cache[evict_set][evict_block] = PLACEHOLDER_TAG;
+                // set LRU to high value, so this cell will be evicted next.
+                self.lru_storage[evict_set][evict_block] = usize::MAX / 2;
+
+                // TODO: is writeback always required? normally only after write...
+                // todo!();
+                #[cfg(debug_assertions)]
+                println!("({:?}) Writeback commissioned.", self.core_id);
+                return false;
+            }
+        }
+        // --- after this point, the optional write-back is already done => load new value!
         let bus_action = self.protocol.read(
-            self.tag(addr),
-            store_pos.map(|(set_idx, block_idx)| self.nested_to_flat(set_idx, block_idx)),
-            self.nested_to_flat(evict_idx.0, evict_idx.1),
-            store_pos.is_some(),
+            loaded_tag,
+            flat_store_idx,
+            flat_evict_idx,
+            store_idx.is_some(),
             bus,
         );
 
@@ -212,7 +217,7 @@ impl Cache {
             bus.put_on(self.core_id as u32, action);
         }
 
-        if let Some((set_idx, block_idx)) = store_pos {
+        if let Some((set_idx, block_idx)) = store_idx {
             self.log_access(set_idx, block_idx);
         } else {
             // the memory for this is already flushed to main memory
@@ -369,6 +374,7 @@ impl Cache {
         let cache_set = &mut self.cache[set_idx];
         let lru_cache_set = &mut self.lru_storage[set_idx];
 
+        #[cfg(debug_assertions)]
         let old_tag = cache_set[evict_idx];
         #[cfg(debug_assertions)]
         println!(

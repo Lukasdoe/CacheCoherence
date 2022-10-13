@@ -37,6 +37,9 @@ pub trait Protocol {
 
     /// applies internal protocol state changes based on final bus state
     fn after_snoop(&mut self, bus: &mut Bus);
+
+    /// true if this cache is the owner of the line. Should cause a flush bus transaction.
+    fn writeback_required(&self, cache_idx: usize, tag: u32) -> bool;
 }
 
 #[derive(Clone, Debug, ArgEnum)]

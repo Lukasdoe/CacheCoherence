@@ -77,7 +77,7 @@ impl Dragon {
 
         if bus_transaction.is_none() || !bus.occupied() {
             // Cache will issue bus action => already modifiy state
-            self.cache_state[flat_store_idx] = Some((next_state, tag));
+            self.cache_state[flat_cache_idx.unwrap_or(flat_store_idx)] = Some((next_state, tag));
 
             #[cfg(debug_assertions)]
             println!(
@@ -227,5 +227,12 @@ impl Protocol for Dragon {
 
     fn after_snoop(&mut self, bus: &mut Bus) {
         self.bus_after_snoop_transition(bus)
+    }
+
+    fn writeback_required(&self, cache_idx: usize, tag: u32) -> bool {
+        assert!(self.cache_state[cache_idx].is_some());
+        let (state, stored_tag) = self.cache_state[cache_idx].unwrap();
+        assert!(stored_tag == tag);
+        state == DragonState::M || state == DragonState::Sm
     }
 }

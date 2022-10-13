@@ -55,9 +55,7 @@ impl Mesi {
             (MesiState::I, ProcessorAction::Write, true) => {
                 (MesiState::M, Some(BusAction::BusRdXMem(tag)))
             }
-            (_, ProcessorAction::Read, false) => {
-                (MesiState::E, Some(BusAction::BusRdMem(tag)))
-            }
+            (_, ProcessorAction::Read, false) => (MesiState::E, Some(BusAction::BusRdMem(tag))),
             _ => panic!(
                 "({:?}) Unresolved processor event: {:?}",
                 self.core_id,
@@ -71,14 +69,8 @@ impl Mesi {
         );
 
         if bus_transaction.is_none() || !bus.occupied() {
-            // Cache will issue bus action => already modifiy state
-            self.cache_state[flat_store_idx] = (next_state, tag);
-
-            #[cfg(debug_assertions)]
-            println!(
-                "({:?}) MESI: protocol state successfully updated",
-                self.core_id
-            );
+            // Cache will issue bus action || no bus action required => already modify state
+            self.cache_state[flat_cache_idx.unwrap_or(flat_store_idx)] = (next_state, tag);
         } else {
             // else: bus is busy, cache will execute read / write again next cycle. "busy waiting"
             #[cfg(debug_assertions)]
@@ -173,11 +165,11 @@ impl Mesi {
         if task.action != old_task_action || task.remaining_cycles != old_task_time {
             #[cfg(debug_assertions)]
             println!(
-                "({:?}) MESI: Snooping update: Task changed: Action {:?} ({:?}) -> Action {:?} ({:?}).", 
-                self.core_id, 
-                old_task_action, 
-                old_task_time, 
-                task.action, 
+                "({:?}) MESI: Snooping update: Task changed: Action {:?} ({:?}) -> Action {:?} ({:?}).",
+                self.core_id,
+                old_task_action,
+                old_task_time,
+                task.action,
                    task.remaining_cycles
             );
         }
@@ -252,5 +244,11 @@ impl Protocol for Mesi {
 
     fn after_snoop(&mut self, bus: &mut Bus) {
         self.bus_after_snoop_transition(bus)
+    }
+
+    fn writeback_required(&self, cache_idx: usize, tag: u32) -> bool {
+        let (state, stored_tag) = self.cache_state[cache_idx];
+        assert!(stored_tag == tag);
+        state == MesiState::M
     }
 }
