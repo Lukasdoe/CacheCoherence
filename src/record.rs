@@ -47,7 +47,7 @@ impl Iterator for RecordStream {
     fn next(&mut self) -> Option<Record> {
         let next = self.lines.next()?;
         if let Ok(line) = next {
-            let mut parts = line.split(" ");
+            let mut parts = line.split(' ');
             let label = parts.next().unwrap();
             let value = parts.next().unwrap();
             Some(Record::new(label, value))

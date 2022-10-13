@@ -21,11 +21,11 @@ impl System {
             .into_iter()
             .enumerate()
             .map(|(id, stream)| {
-                Core::new(&protocol, cache_size, associativity, block_size, stream, id)
+                Core::new(protocol, cache_size, associativity, block_size, stream, id)
             })
             .collect();
         System {
-            cores: cores,
+            cores,
             bus: Bus::new(),
             clk: 0,
         }
@@ -61,6 +61,6 @@ impl System {
         if !alocisw {
             println!("Finished after {:?} clock cycles.", self.clk);
         }
-        return !alocisw;
+        !alocisw
     }
 }

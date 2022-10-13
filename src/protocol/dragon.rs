@@ -4,7 +4,7 @@ use crate::bus::{Bus, BusAction, Task};
 
 use super::{ProcessorAction, Protocol};
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum DragonState {
     E,
     Sc,
@@ -98,7 +98,7 @@ impl Dragon {
                 self.core_id
             );
         }
-        return bus_transaction;
+        bus_transaction
     }
 
     fn idx_of_tag(&self, tag: u32) -> Option<usize> {
@@ -106,7 +106,7 @@ impl Dragon {
             .iter()
             .enumerate()
             .find(|(_, stored)| stored.is_some() && stored.as_ref().unwrap().1 == tag)
-            .map_or(None, |(idx, _)| Some(idx))
+            .map(|(idx, _)| idx)
     }
 
     fn bus_snoop_transition(&mut self, bus: &mut Bus) -> Option<Task> {
@@ -166,7 +166,7 @@ impl Dragon {
             // Ignore bus events that don't change anything
             _ => return None,
         }
-        return Some(task);
+        Some(task)
     }
 
     fn bus_after_snoop_transition(&mut self, bus: &mut Bus) {

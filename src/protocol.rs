@@ -3,7 +3,7 @@ use clap::ArgEnum;
 pub mod dragon;
 pub mod mesi;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum ProcessorAction {
     Read,
     Write,
@@ -48,7 +48,7 @@ pub enum ProtocolKind {
 pub struct ProtocolBuilder;
 
 impl ProtocolBuilder {
-    pub fn new(
+    pub fn create(
         core_id: u32,
         kind: &ProtocolKind,
         cache_size: usize,

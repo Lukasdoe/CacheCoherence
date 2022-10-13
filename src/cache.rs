@@ -18,8 +18,6 @@ pub struct Cache {
     set_size: usize,
     // size of a block in bytes
     block_size: usize,
-    // size of the cache in bytes
-    cache_size: usize,
 
     offset_length: usize,
     index_length: usize,
@@ -59,12 +57,11 @@ impl Cache {
 
             set_size,
             block_size,
-            cache_size,
 
             cache: vec![vec![PLACEHOLDER_TAG; associativity]; num_sets],
             lru_storage: vec![vec![0; associativity]; num_sets],
 
-            protocol: ProtocolBuilder::new(
+            protocol: ProtocolBuilder::create(
                 core_id as u32,
                 kind,
                 cache_size,
@@ -127,42 +124,21 @@ impl Cache {
             assert!(self.scheduled_instructions.len() < 3);
             return true;
         }
-        return false;
+        false
     }
 
     pub fn snoop(&mut self, bus: &mut Bus) {
-        self.protocol
-            .snoop(bus)
-            .map(|task| *bus.active_task().unwrap() = task);
+        if let Some(task) = self.protocol.snoop(bus) {
+            *bus.active_task().unwrap() = task
+        }
     }
 
     pub fn after_snoop(&mut self, bus: &mut Bus) {
         self.protocol.after_snoop(bus);
     }
 
-    fn flat_to_nested(&self, block_idx: usize) -> (usize, usize) {
-        let number_of_blocks_in_set = self.set_size / self.block_size;
-        let in_set_idx = block_idx % number_of_blocks_in_set;
-        let set_idx = (block_idx - in_set_idx) / number_of_blocks_in_set;
-        (set_idx, in_set_idx)
-    }
-
     fn nested_to_flat(&self, set_idx: usize, block_idx: usize) -> usize {
         set_idx * (self.set_size / self.block_size) + block_idx
-    }
-
-    #[cfg(debug_assertions)]
-    fn print_cache(&self) {
-        for set_idx in 0..self.num_sets {
-            print!("Set {:?}: ", set_idx);
-            for block_idx in 0..self.associativity {
-                print!(
-                    "(B: {:?}, T: {:?}, L: {:?}); ",
-                    block_idx, self.cache[set_idx][block_idx], self.lru_storage[set_idx][block_idx]
-                );
-            }
-            print!("\n");
-        }
     }
 
     /// Returns true if the operation could be completed / scheduled
@@ -253,8 +229,7 @@ impl Cache {
             "({:?}) Cache load of addr {:#x} successfully completed.",
             self.core_id, addr
         );
-
-        return true;
+        true
     }
 
     /// Returns true if the operation could be completed / scheduled
@@ -314,8 +289,7 @@ impl Cache {
             "({:?}) Cache store of addr {:#x} successfully completed.",
             self.core_id, addr
         );
-
-        return true;
+        true
     }
 
     fn index(&self, addr: u32) -> usize {
@@ -323,7 +297,7 @@ impl Cache {
             return 0;
         }
         let right_offset = self.offset_length;
-        let mask = (ADDR_MASK_BLANK >> self.tag_length + self.offset_length) << right_offset;
+        let mask = (ADDR_MASK_BLANK >> (self.tag_length + self.offset_length)) << right_offset;
         let masked_addr = (addr as u32) & mask;
         (masked_addr >> right_offset) as usize
     }
@@ -336,7 +310,7 @@ impl Cache {
         addr >> right_offset
     }
 
-    fn search_cache_set(&self, addr: u32, cache_set: &Vec<u32>) -> Option<usize> {
+    fn search_cache_set(&self, addr: u32, cache_set: &[u32]) -> Option<usize> {
         let tag = self.tag(addr);
         cache_set.iter().position(|&block_tag| block_tag == tag)
     }
@@ -357,7 +331,7 @@ impl Cache {
             set_idx,
             block_idx
         );
-        return Some((set_idx, block_idx));
+        Some((set_idx, block_idx))
     }
 
     fn log_access(&mut self, set_idx: usize, block_idx: usize) {
@@ -373,7 +347,7 @@ impl Cache {
     fn update_lru(&mut self) {
         for set_idx in 0..self.num_sets {
             for block_idx in 0..self.associativity {
-                self.lru_storage[set_idx][block_idx] = self.lru_storage[set_idx][block_idx] + 1;
+                self.lru_storage[set_idx][block_idx] += 1;
             }
         }
     }

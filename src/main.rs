@@ -29,7 +29,7 @@ struct ProgramArgs {
 
 // taken from https://stackoverflow.com/a/600306
 fn power_of_two(x: usize) -> bool {
-    return (x != 0) && ((x & (x - 1)) == 0);
+    (x != 0) && ((x & (x - 1)) == 0)
 }
 
 fn check_args(args: &ProgramArgs) {

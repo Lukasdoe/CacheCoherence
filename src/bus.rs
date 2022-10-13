@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+#[derive(Default)]
 pub struct Bus {
     task: Option<Task>,
 }
@@ -75,7 +76,7 @@ impl Bus {
         self.task = Some(Task {
             issuer_id,
             remaining_cycles: Bus::price(&action),
-            action: action,
+            action,
         });
     }
 
