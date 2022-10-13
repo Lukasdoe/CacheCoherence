@@ -61,13 +61,7 @@ impl Cache {
             cache: vec![vec![PLACEHOLDER_TAG; associativity]; num_sets],
             lru_storage: vec![vec![0; associativity]; num_sets],
 
-            protocol: ProtocolBuilder::create(
-                core_id as u32,
-                kind,
-                cache_size,
-                associativity,
-                block_size,
-            ),
+            protocol: ProtocolBuilder::create(core_id as u32, kind, cache_size, block_size),
 
             offset_length,
             index_length,
@@ -176,6 +170,8 @@ impl Cache {
             // set LRU to high value, so this cell will be evicted next.
             self.lru_storage[evict_idx.0][evict_idx.1] = usize::MAX / 2;
 
+            // TODO: is writeback always required? normally only after write...
+            // todo!();
             #[cfg(debug_assertions)]
             println!("({:?}) Writeback commissioned.", self.core_id);
             return false;

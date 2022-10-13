@@ -6,7 +6,7 @@ pub struct Bus {
 }
 
 // MESI and Dragon bus actions combined
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum BusAction {
     BusRdMem(u32),
     BusRdShared(u32),

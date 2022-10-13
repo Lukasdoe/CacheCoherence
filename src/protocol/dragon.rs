@@ -43,27 +43,21 @@ impl Dragon {
             // HIT
             (Some((DragonState::E, _)), ProcessorAction::Read, true) => (DragonState::E, None),
             (Some((DragonState::E, _)), ProcessorAction::Write, true) => (DragonState::M, None),
-
             (Some((DragonState::Sc, _)), ProcessorAction::Read, true) => (DragonState::Sc, None),
-
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sc, _)), ProcessorAction::Write, true) => {
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
-
             (Some((DragonState::Sm, _)), ProcessorAction::Read, true) => (DragonState::Sm, None),
-
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sm, _)), ProcessorAction::Write, true) => {
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
-
             (Some((DragonState::M, _)), _, true) => (DragonState::M, None),
 
             // MISS
             // check busupd for sharers, if none => DragonState::E
             (_, ProcessorAction::Read, false) => (DragonState::E, Some(BusAction::BusRdMem(tag))),
-
             // this can not occur:
             // (_, ProcessorAction::Write, false) => (DragonState::Sm, None),
             _ => panic!(
@@ -99,14 +93,6 @@ impl Dragon {
             );
         }
         bus_transaction
-    }
-
-    fn idx_of_tag(&self, tag: u32) -> Option<usize> {
-        self.cache_state
-            .iter()
-            .enumerate()
-            .find(|(_, stored)| stored.is_some() && stored.as_ref().unwrap().1 == tag)
-            .map(|(idx, _)| idx)
     }
 
     fn bus_snoop_transition(&mut self, bus: &mut Bus) -> Option<Task> {
@@ -199,9 +185,16 @@ impl Dragon {
             (BusAction::BusRdShared(_), DragonState::E) => {
                 *state = Some((DragonState::Sc, tag));
             }
-
             _ => (),
         }
+    }
+
+    fn idx_of_tag(&self, tag: u32) -> Option<usize> {
+        self.cache_state
+            .iter()
+            .enumerate()
+            .find(|(_, stored)| stored.is_some() && stored.as_ref().unwrap().1 == tag)
+            .map(|(idx, _)| idx)
     }
 }
 

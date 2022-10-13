@@ -24,3 +24,7 @@
 - Caches block during their own bus transactions => the cache waits until its bus transaction is
   finished until it commences with further steps (this is required to restart the transaction in
   case something fails)
+- Other caches may listen to the bus during flushes to main memory and can therefore directly update
+  / read their new value. This means that a bus read that causes a flush (MESI) only takes the time
+  that is required to flush to main memory (which is > than shared read time).
+- Our MESI is Illinois MESI.

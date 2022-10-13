@@ -52,17 +52,11 @@ impl ProtocolBuilder {
         core_id: u32,
         kind: &ProtocolKind,
         cache_size: usize,
-        associativity: usize,
         block_size: usize,
     ) -> Box<dyn Protocol> {
         match kind {
             ProtocolKind::Dragon => Box::new(dragon::Dragon::new(core_id, cache_size, block_size)),
-            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(
-                core_id,
-                cache_size,
-                associativity,
-                block_size,
-            )),
+            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(core_id, cache_size, block_size)),
         }
     }
 }
