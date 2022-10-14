@@ -13,7 +13,7 @@
 - Dragon protocol: Bus flushes are only required for write backs. As long as the copy stays in the
   cache, every "flush" in the diagram is replaced with a shared update action. No data is written to
   main memory.
-- Cache write-allocate: 
+- Cache write-allocate:
   every write checks if the address is currently in cache. If not, it schedules a load and restarts
   the check afterwards. Only if the check is successful (hit), the write is attempted. If another
   cache invalidates the cache line between the read and the write, then the read has to be repeated.
@@ -28,3 +28,9 @@
   / read their new value. This means that a bus read that causes a flush (MESI) only takes the time
   that is required to flush to main memory (which is > than shared read time).
 - Our MESI is Illinois MESI.
+- Dragon Protocol: Replacement of Sc blocks is not broadcast
+- Dragon Protocol: All cache line states are eligible for cache-to-cache data sharing. This means
+  that reads from memory are only required if none of the existing caches holds the requested tag.
+- Dragon Protocol: (From Sm, Sc) On a PrWr, a BusUpd is scheduled. If no other cache responds to the
+  update then the bus is cleared in the same cycle. This way, the cache can check if other caches
+  still hold the value and if not, only block the bus for one cycle.

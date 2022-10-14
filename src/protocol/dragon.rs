@@ -46,11 +46,13 @@ impl Dragon {
             (Some((DragonState::Sc, _)), ProcessorAction::Read, true) => (DragonState::Sc, None),
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sc, _)), ProcessorAction::Write, true) => {
+                // TODO: This writes back values to memory => WRONG!!! should only share!
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
             (Some((DragonState::Sm, _)), ProcessorAction::Read, true) => (DragonState::Sm, None),
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sm, _)), ProcessorAction::Write, true) => {
+                // TODO: This writes back values to memory => WRONG!!! should only share!
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
             (Some((DragonState::M, _)), _, true) => (DragonState::M, None),
@@ -108,50 +110,75 @@ impl Dragon {
             Some(idx) => &mut self.cache_state[idx],
             None => return None,
         };
-        match (
-            &task.action,
-            state.as_ref().map_or(DragonState::E, |value| value.0),
-        ) {
-            // Event: Someone else reads our exclusive cache block
-            // => transition from E -> Sc, update bus transaction to shared, update task time
-            (BusAction::BusRdMem(_), DragonState::E) => {
-                *state = Some((DragonState::Sc, tag));
+
+        // first, decide if we share any data
+        match (&task.action, state.as_ref()) {
+            // Event: Someone else reads a cache block that we have cached
+            // => Change read to shared read and update remaining time.
+            // (state transitions are handled later.)
+            (BusAction::BusRdMem(_), Some(_)) => {
                 task.action = BusAction::BusRdShared(tag);
                 task.remaining_cycles = Bus::price(&task.action);
             }
 
-            // Event: Someone else reads a block that we have in Sm-state
-            // => Flush (in this case: change to read shared)
-            (BusAction::BusRdMem(_), DragonState::Sm) => {
+            // Event: Someone else updates a cache block that we have cached
+            // => Change update to shared update and update remaining time.
+            // (state transitions are handled later.)
+            (BusAction::BusUpdMem(_), Some(_)) => {
                 task.action = BusAction::BusRdShared(tag);
                 task.remaining_cycles = Bus::price(&task.action);
             }
+            _ => (),
+        }
 
-            // Event: Someone else updates a block that we have in Sm
-            // => transition from Sm -> Sc, update bus transaction to shared, update task time
-            (BusAction::BusUpdMem(_), DragonState::Sm) => {
-                *state = Some((DragonState::Sc, tag));
-                task.action = BusAction::BusUpdShared(tag);
-                task.remaining_cycles = Bus::price(&task.action);
+        // perform state transitions
+        *state = match (&task.action, state.as_ref().map(|value| value.0)) {
+            // Event: Bus Read && Line is E
+            // => E -> Sc
+            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::E)) => {
+                Some((DragonState::Sc, tag))
             }
 
-            // Event: Someone else reads a block that we have in M-state
-            // => transition from M -> Sm, change memory read transaction to update and flush
-            // We don't actually perform a flush, we just add the flush-time to the current read operation
-            (BusAction::BusRdMem(_), DragonState::M) => {
-                *state = Some((DragonState::Sm, tag));
-                task.action = BusAction::BusRdShared(tag);
-                task.remaining_cycles = Bus::price(&task.action);
+            // Event: Bus Read && Line is Sm
+            // => pass
+            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::Sm)) => {
+                Some((DragonState::Sm, tag))
+            }
+
+            // Event: Bus Read && Line is Sc
+            // => pass
+            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::Sc)) => {
+                Some((DragonState::Sc, tag))
+            }
+
+            // Event: Bus Read && Line is M
+            // => pass
+            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::M)) => {
+                Some((DragonState::Sm, tag))
+            }
+
+            // Event: Bus Update && Line is Sm
+            // => Sm -> Sc
+            (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::Sm)) => {
+                Some((DragonState::Sc, tag))
+            }
+
+            // Event: Bus Update && Line is Sc
+            // => pass
+            (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::Sc)) => {
+                Some((DragonState::Sc, tag))
             }
 
             // catch some buggy cases
-            (BusAction::BusRdShared(_), DragonState::E) => {
-                panic!()
+            (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::E)) => {
+                panic!(
+                    "({:?}) Tag {:x}, Task {:?}, State {:?}",
+                    self.core_id, tag, task, state
+                )
             }
-
             // Ignore bus events that don't change anything
-            _ => return None,
-        }
+            (_, d_state) => d_state.map(|s| (s, tag)),
+        };
         Some(task)
     }
 
@@ -178,12 +205,16 @@ impl Dragon {
                 *state = Some((DragonState::Sm, tag));
             }
 
+            (BusAction::BusRdShared(_), DragonState::E) => {
+                *state = Some((DragonState::Sc, tag));
+            }
+
             (BusAction::BusUpdShared(_), DragonState::M) => {
                 *state = Some((DragonState::Sm, tag));
             }
 
-            (BusAction::BusRdShared(_), DragonState::E) => {
-                *state = Some((DragonState::Sc, tag));
+            (BusAction::BusUpdMem(_), DragonState::M) => {
+                bus.clear();
             }
             _ => (),
         }

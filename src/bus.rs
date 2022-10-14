@@ -1,8 +1,15 @@
 use std::ops::Deref;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bus {
     task: Option<Task>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Task {
+    pub issuer_id: u32,
+    pub remaining_cycles: u32,
+    pub action: BusAction,
 }
 
 // MESI and Dragon bus actions combined
@@ -46,19 +53,12 @@ impl std::fmt::Debug for BusAction {
     }
 }
 
-#[derive(Clone)]
-pub struct Task {
-    pub issuer_id: u32,
-    pub remaining_cycles: u32,
-    pub action: BusAction,
-}
-
 impl Bus {
     pub fn new() -> Self {
         Bus { task: None }
     }
 
-    // pricelist
+    /// Query number of cycles required for the entered action
     pub fn price(action: &BusAction) -> u32 {
         match action {
             BusAction::BusRdMem(_) => 100,
@@ -71,6 +71,7 @@ impl Bus {
         }
     }
 
+    /// Schedule bus transaction
     pub fn put_on(&mut self, issuer_id: u32, action: BusAction) {
         assert!(self.task.is_none());
         self.task = Some(Task {
@@ -80,10 +81,17 @@ impl Bus {
         });
     }
 
+    /// Clear current bus transaction
+    pub fn clear(&mut self) {
+        self.task = None;
+    }
+
+    /// Returns true if the bus is currently busy
     pub fn occupied(&self) -> bool {
         self.task.is_some()
     }
 
+    /// Advance current bus transaction by one cycle (if any)
     pub fn update(&mut self) {
         if !self.occupied() {
             #[cfg(debug_assertions)]
@@ -111,6 +119,7 @@ impl Bus {
         }
     }
 
+    /// Get currently scheduled bus transaction (if any)
     pub fn active_task(&mut self) -> Option<&mut Task> {
         self.task.as_mut()
     }
