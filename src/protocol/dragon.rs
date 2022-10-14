@@ -46,13 +46,15 @@ impl Dragon {
             (Some((DragonState::Sc, _)), ProcessorAction::Read, true) => (DragonState::Sc, None),
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sc, _)), ProcessorAction::Write, true) => {
-                // TODO: This writes back values to memory => WRONG!!! should only share!
+                // This bus transaction is cleared at the end of the cycle if no other cache shares
+                // the line
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
             (Some((DragonState::Sm, _)), ProcessorAction::Read, true) => (DragonState::Sm, None),
             // check busupd for sharers, if some => DragonState::Sm
             (Some((DragonState::Sm, _)), ProcessorAction::Write, true) => {
-                // TODO: This writes back values to memory => WRONG!!! should only share!
+                // This bus transaction is cleared at the end of the cycle if no other cache shares
+                // the line
                 (DragonState::M, Some(BusAction::BusUpdMem(tag)))
             }
             (Some((DragonState::M, _)), _, true) => (DragonState::M, None),
