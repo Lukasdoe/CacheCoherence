@@ -92,26 +92,27 @@ impl Cache {
         self.update_lru();
 
         // we currently write to the bus => better back off until this is finished
-        if bus.occupied()
-            && bus.active_task().unwrap().issuer_id == self.core_id.try_into().unwrap()
+        if bus
+            .active_task()
+            .map_or(false, |t| t.issuer_id == self.core_id as u32)
         {
             return true;
         }
 
-        if let Some((ref addr, ref action)) = self.scheduled_instructions.pop_front() {
+        if let Some((addr, action)) = self.scheduled_instructions.pop_front() {
             // loads are always stored as next instruction, stores might place loads in front and
             // are therefore always the last instruction.
-            match *action {
+            match action {
                 ProcessorAction::Read => {
-                    if !self.internal_load(*addr, bus) {
+                    if !self.internal_load(addr, bus) {
                         self.scheduled_instructions
-                            .push_front((*addr, ProcessorAction::Read));
+                            .push_front((addr, ProcessorAction::Read));
                     }
                 }
                 ProcessorAction::Write => {
-                    if !self.internal_store(*addr, bus) {
+                    if !self.internal_store(addr, bus) {
                         self.scheduled_instructions
-                            .push_back((*addr, ProcessorAction::Write));
+                            .push_back((addr, ProcessorAction::Write));
                     }
                 }
             }

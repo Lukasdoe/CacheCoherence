@@ -132,42 +132,30 @@ impl Dragon {
         }
 
         // perform state transitions
-        *state = match (&task.action, state.as_ref().map(|value| value.0)) {
+        match (&task.action, state.as_ref().map(|value| value.0)) {
             // Event: Bus Read && Line is E
             // => E -> Sc
             (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::E)) => {
-                Some((DragonState::Sc, tag))
+                *state = Some((DragonState::Sc, tag))
             }
 
             // Event: Bus Read && Line is Sm
             // => pass
-            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::Sm)) => {
-                Some((DragonState::Sm, tag))
-            }
 
             // Event: Bus Read && Line is Sc
             // => pass
-            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::Sc)) => {
-                Some((DragonState::Sc, tag))
-            }
 
             // Event: Bus Read && Line is M
             // => pass
-            (BusAction::BusRdMem(_) | BusAction::BusRdShared(_), Some(DragonState::M)) => {
-                Some((DragonState::Sm, tag))
-            }
 
             // Event: Bus Update && Line is Sm
             // => Sm -> Sc
             (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::Sm)) => {
-                Some((DragonState::Sc, tag))
+                *state = Some((DragonState::Sc, tag))
             }
 
             // Event: Bus Update && Line is Sc
             // => pass
-            (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::Sc)) => {
-                Some((DragonState::Sc, tag))
-            }
 
             // catch some buggy cases
             (BusAction::BusUpdMem(_) | BusAction::BusUpdShared(_), Some(DragonState::E)) => {
@@ -177,7 +165,7 @@ impl Dragon {
                 )
             }
             // Ignore bus events that don't change anything
-            (_, d_state) => d_state.map(|s| (s, tag)),
+            _ => (),
         };
         Some(task)
     }
