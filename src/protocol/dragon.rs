@@ -125,7 +125,7 @@ impl Dragon {
             // => Change update to shared update and update remaining time.
             // (state transitions are handled later.)
             (BusAction::BusUpdMem(_), Some(_)) => {
-                task.action = BusAction::BusRdShared(tag);
+                task.action = BusAction::BusUpdShared(tag);
                 task.remaining_cycles = Bus::price(&task.action);
             }
             _ => (),
