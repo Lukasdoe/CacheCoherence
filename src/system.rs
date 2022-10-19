@@ -2,8 +2,8 @@ use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
-
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
+use rand::{rngs::mock::StepRng, seq::SliceRandom};
 
 pub struct System {
     cores: Vec<Core>,
@@ -11,6 +11,7 @@ pub struct System {
     bus: Bus,
     clk: usize,
     progress: ProgressBar,
+    rng: rand::rngs::mock::StepRng,
 }
 
 impl System {
@@ -54,6 +55,7 @@ impl System {
             bus: Bus::new(),
             clk: 0,
             progress: system_progress,
+            rng: StepRng::new(0, 1),
         }
     }
 
@@ -66,7 +68,7 @@ impl System {
         self.progress.inc(1);
 
         self.bus.update();
-        fastrand::shuffle(&mut self.active_cores);
+        self.active_cores.shuffle(&mut self.rng);
 
         // run 1: parse new instructions / update state
         self.active_cores = self
