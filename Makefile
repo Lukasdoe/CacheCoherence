@@ -1,9 +1,9 @@
 RUST_BACKTRACE := 0
 
-cli:
-	cargo run -- dragon ./data/01.zip 128 2 8
+run:
+	cargo run -- dragon ./data/01.zip 128 2 8 --no-progress
 
 build:
 	cargo build
 
-.PHONY: cli
+.PHONY: run build

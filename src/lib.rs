@@ -1,3 +1,12 @@
+#[macro_use]
+extern crate lazy_static;
+
+use logger::Logger;
+
+lazy_static! {
+    pub static ref LOGGER: Logger = Logger::new();
+}
+
 mod bus;
 mod cache;
 mod core;
