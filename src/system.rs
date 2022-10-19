@@ -17,6 +17,7 @@ pub struct System {
     bus: Bus,
     clk: usize,
     progress: ProgressBar,
+    mp_bar: MultiProgress,
     rng: rand::rngs::mock::StepRng,
 }
 
@@ -61,6 +62,7 @@ impl System {
             bus: Bus::new(),
             clk: 0,
             progress: system_progress,
+            mp_bar,
             rng: StepRng::new(0, 1),
         }
     }
@@ -118,5 +120,9 @@ impl System {
         for core in &self.cores {
             core.sanity_check();
         }
+    }
+
+    pub fn hide_progress(&self) {
+        self.mp_bar.set_draw_target(ProgressDrawTarget::hidden());
     }
 }

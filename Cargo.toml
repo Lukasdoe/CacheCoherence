@@ -15,4 +15,5 @@ indicatif = "0.17.1"
 rand = "0.8.5"
 logger = { path = "./logger" }
 shared = { path = "./shared" }
+analyzer = { path = "./analyzer" }
 lazy_static = "1.4.0"

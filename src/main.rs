@@ -1,7 +1,8 @@
+use analyzer::Analyzer;
 use cacher::LOGGER;
 use cacher::{FileLoader, ProtocolKind, System};
 use clap::Parser;
-use logger::{InitSystem, LogEntry};
+use logger::{InitSystem, LogEntry, RLogger};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -87,4 +88,17 @@ fn main() {
             break;
         }
     }
+    system.hide_progress();
+
+    let mut read_logger = RLogger::new("binlog");
+    let result = match Analyzer::extract_stats(&mut read_logger) {
+        Ok(r) => r,
+        Err(err) => panic!("{err:?}"),
+    };
+    println!(
+        "\n#################\n\
+         Analysis Results:\n\
+         #################\n"
+    );
+    println!("{}", Analyzer::pretty_print(&result));
 }
