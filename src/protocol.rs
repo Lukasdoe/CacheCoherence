@@ -1,5 +1,7 @@
-use crate::bus::{Bus, BusAction, Task};
+use crate::bus::{Bus, Task};
 use clap::ArgEnum;
+use shared::bus::BusAction;
+
 pub mod dragon;
 pub mod mesi;
 
@@ -40,9 +42,12 @@ pub trait Protocol {
 
     /// true if this cache is the owner of the line. Should cause a flush bus transaction.
     fn writeback_required(&self, cache_idx: usize, tag: u32) -> bool;
+
+    /// true if cache line with the supplied tag and index is shared
+    fn is_shared(&self, cache_idx: usize, tag: u32) -> bool;
 }
 
-#[derive(Clone, Debug, ArgEnum)]
+#[derive(Clone, Copy, Debug, ArgEnum)]
 pub enum ProtocolKind {
     Mesi,
     Dragon,
@@ -52,7 +57,7 @@ pub struct ProtocolBuilder;
 
 impl ProtocolBuilder {
     pub fn create(
-        core_id: u32,
+        core_id: usize,
         kind: &ProtocolKind,
         cache_size: usize,
         block_size: usize,

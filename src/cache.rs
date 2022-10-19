@@ -1,6 +1,8 @@
-use crate::bus::BusAction;
+use crate::bus::Task;
 use crate::protocol::{ProcessorAction, Protocol, ProtocolBuilder, ProtocolKind};
-use crate::Bus;
+use crate::{Bus, LOGGER};
+use logger::*;
+use shared::bus::BusAction;
 use std::collections::VecDeque;
 
 const ADDR_LEN: u32 = 32;
@@ -61,7 +63,7 @@ impl Cache {
             cache: vec![vec![PLACEHOLDER_TAG; associativity]; num_sets],
             lru_storage: vec![vec![0; associativity]; num_sets],
 
-            protocol: ProtocolBuilder::create(core_id as u32, kind, cache_size, block_size),
+            protocol: ProtocolBuilder::create(core_id, kind, cache_size, block_size),
 
             offset_length,
             index_length,
@@ -94,7 +96,7 @@ impl Cache {
         // we currently write to the bus => better back off until this is finished
         if bus
             .active_task()
-            .map_or(false, |t| t.issuer_id == self.core_id as u32)
+            .map_or(false, |t| t.issuer_id == self.core_id)
         {
             return true;
         }
@@ -130,6 +132,28 @@ impl Cache {
 
     pub fn after_snoop(&mut self, bus: &mut Bus) {
         self.protocol.after_snoop(bus);
+        if bus.active_task().map_or(
+            false,
+            |Task {
+                 issuer_id,
+                 remaining_cycles,
+                 ..
+             }| *issuer_id == self.core_id && *remaining_cycles == 0,
+        ) {
+            let action = bus.active_task().unwrap().action;
+            let tag = BusAction::extract_tag(action);
+            LOGGER.write(if self.protocol.is_shared(std::usize::MAX, tag) {
+                LogEntry::CacheSharedAccess(CacheSharedAccess {
+                    id: self.core_id,
+                    tag,
+                })
+            } else {
+                LogEntry::CachePrivateAccess(CachePrivateAccess {
+                    id: self.core_id,
+                    tag,
+                })
+            });
+        }
     }
 
     fn nested_to_flat(&self, set_idx: usize, block_idx: usize) -> usize {
@@ -153,6 +177,7 @@ impl Cache {
         let flat_evict_idx = self.nested_to_flat(evict_set, evict_block);
 
         if store_idx != None {
+            // TODO: is a hit on an invalid cache line also a hit?
             #[cfg(debug_assertions)]
             println!("({:?}) Hit.", self.core_id);
         } else {
@@ -177,15 +202,13 @@ impl Cache {
 
                     return false;
                 }
-                bus.put_on(self.core_id as u32, BusAction::Flush(self.tag(addr)));
+                bus.put_on(self.core_id, BusAction::Flush(evict_tag, self.block_size));
 
                 // clear cache for later insert
                 self.cache[evict_set][evict_block] = PLACEHOLDER_TAG;
                 // set LRU to high value, so this cell will be evicted next.
                 self.lru_storage[evict_set][evict_block] = usize::MAX / 2;
 
-                // TODO: is writeback always required? normally only after write...
-                // todo!();
                 #[cfg(debug_assertions)]
                 println!("({:?}) Writeback commissioned.", self.core_id);
                 return false;
@@ -215,15 +238,39 @@ impl Cache {
                 "({:?}) Cache load executed bus transaction {:?}",
                 self.core_id, action
             );
-            bus.put_on(self.core_id as u32, action);
+            bus.put_on(self.core_id, action);
         }
 
         if let Some((set_idx, block_idx)) = store_idx {
             self.log_access(set_idx, block_idx);
+            LOGGER.write(LogEntry::CacheHit(CacheHit {
+                id: self.core_id,
+                tag: loaded_tag,
+            }));
+
+            if bus_action.is_none() {
+                LOGGER.write(
+                    if self.protocol.is_shared(flat_store_idx.unwrap(), loaded_tag) {
+                        LogEntry::CacheSharedAccess(CacheSharedAccess {
+                            id: self.core_id,
+                            tag: loaded_tag,
+                        })
+                    } else {
+                        LogEntry::CachePrivateAccess(CachePrivateAccess {
+                            id: self.core_id,
+                            tag: loaded_tag,
+                        })
+                    },
+                );
+            }
         } else {
             // the memory for this is already flushed to main memory
-            // TODO: should we flush to other cores?
+            // TODO: should we flush to other cores? => nah
             self.insert_and_evict(addr);
+            LOGGER.write(LogEntry::CacheMiss(CacheMiss {
+                id: self.core_id,
+                tag: self.tag(addr),
+            }));
         }
 
         #[cfg(debug_assertions)]
@@ -284,7 +331,7 @@ impl Cache {
                 "({:?}) Cache store executed bus transaction {:?}",
                 self.core_id, action
             );
-            bus.put_on(self.core_id as u32, action);
+            bus.put_on(self.core_id, action);
         }
         #[cfg(debug_assertions)]
         println!(

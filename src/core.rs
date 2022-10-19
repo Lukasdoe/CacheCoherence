@@ -1,9 +1,12 @@
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
-use crate::record::{Label, RecordStream};
+use crate::record::RecordStream;
 use crate::utils::Counter;
+use crate::LOGGER;
 use indicatif::*;
+use logger::*;
+use shared::record::Label;
 
 pub struct Core {
     cache: Cache,
@@ -24,6 +27,10 @@ impl Core {
         mp_bar: &MultiProgress,
     ) -> Self {
         println!("({:?}) loaded {:?}", id, records.file_name);
+        LOGGER.write(LogEntry::InitCore(InitCore {
+            id,
+            file_name: records.file_name.clone(),
+        }));
 
         let pb = mp_bar
             .add(ProgressBar::new(records.line_count as u64))
@@ -47,7 +54,12 @@ impl Core {
     /// Simulate one cycle. Return false if no more instructions are left to process.
     pub fn step(&mut self, bus: &mut Bus) -> bool {
         // stall, if required. Remember: if they return false, then they didn't work yet.
-        if self.alu.update() || self.cache.update(bus) {
+        if self.alu.update() {
+            LOGGER.write(LogEntry::CoreStallALU(CoreStallALU { id: self.id }));
+            return true;
+        }
+        if self.cache.update(bus) {
+            LOGGER.write(LogEntry::CoreStallMemory(CoreStallMemory { id: self.id }));
             return true;
         }
 
@@ -57,6 +69,11 @@ impl Core {
                 "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
             );
+            LOGGER.write(LogEntry::InstrFetch(InstrFetch {
+                id: self.id,
+                type_: record.label,
+                arg: record.value,
+            }));
             self.progress_bar.inc(1);
 
             match (&record.label, record.value) {
@@ -69,6 +86,7 @@ impl Core {
             self.cache.update(bus);
             true
         } else {
+            LOGGER.write(LogEntry::CoreHalt(CoreHalt { id: self.id }));
             self.progress_bar.finish();
             false
         }

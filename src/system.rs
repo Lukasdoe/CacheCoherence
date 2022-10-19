@@ -1,9 +1,15 @@
+use logger::{LogEntry, Step};
+
 use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
+use crate::LOGGER;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use rand::{rngs::mock::StepRng, seq::SliceRandom};
+
+/// word size in bytes
+pub const WORD_SIZE: usize = 4;
 
 pub struct System {
     cores: Vec<Core>,
@@ -66,6 +72,7 @@ impl System {
         #[cfg(debug_assertions)]
         println!("Step {:?}", self.clk);
         self.progress.inc(1);
+        LOGGER.write(LogEntry::Step(Step { clk: self.clk }));
 
         self.bus.update();
         self.active_cores.shuffle(&mut self.rng);

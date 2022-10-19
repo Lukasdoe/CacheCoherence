@@ -1,6 +1,7 @@
 use cacher::LOGGER;
 use cacher::{FileLoader, ProtocolKind, System};
 use clap::Parser;
+use logger::{InitSystem, LogEntry};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -66,6 +67,14 @@ fn main() {
         }
     };
 
+    LOGGER.write(LogEntry::InitSystem(InitSystem {
+        protocol: format!("{:?}", &args.protocol),
+        cache_size: args.cache_size,
+        associativity: args.associativity,
+        block_size: args.block_size,
+        num_cores: record_streams.len(),
+        archive_name: String::from(&args.input_file),
+    }));
     let mut system = System::new(
         &args.protocol,
         args.cache_size,
@@ -80,6 +89,7 @@ fn main() {
             break;
         }
     }
+
     LOGGER.open_read("binlog");
     LOGGER.read_to_stdout();
 }

@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bincode = { version = "2.0.0-rc.2", features = ["serde"] }
 serde = { version = "1.0.145", features = ["derive"] }
+shared = { path = "../shared" }

@@ -1,13 +1,7 @@
+use shared::record::Label;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 use zip::{read::ZipFile, ZipArchive};
-
-#[derive(Debug)]
-pub enum Label {
-    Load,
-    Store,
-    Other,
-}
 
 #[derive(Debug)]
 pub struct Record {

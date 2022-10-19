@@ -1,5 +1,7 @@
 use super::{ProcessorAction, Protocol};
-use crate::bus::{Bus, BusAction, Task};
+use crate::bus::{Bus, Task};
+use crate::system::WORD_SIZE;
+use shared::bus::BusAction;
 use std::vec::Vec;
 
 const PLACEHOLDER_TAG: u32 = 0;
@@ -13,15 +15,17 @@ pub enum MesiState {
 }
 
 pub struct Mesi {
-    core_id: u32,
+    core_id: usize,
     cache_state: Vec<(MesiState, u32)>,
+    block_size: usize,
 }
 
 impl Mesi {
-    pub fn new(core_id: u32, cache_size: usize, block_size: usize) -> Self {
+    pub fn new(core_id: usize, cache_size: usize, block_size: usize) -> Self {
         Mesi {
             core_id,
             cache_state: vec![(MesiState::I, PLACEHOLDER_TAG); cache_size / block_size],
+            block_size,
         }
     }
 
@@ -39,6 +43,7 @@ impl Mesi {
         let (current_state, current_tag) = &self.cache_state[flat_cache_idx.unwrap_or_default()];
         assert!(!hit || *current_tag == tag);
         let (next_state, bus_transaction) = match (current_state, &action, hit) {
+            // HIT
             (MesiState::M, ProcessorAction::Read | ProcessorAction::Write, true) => {
                 (MesiState::M, None)
             }
@@ -46,16 +51,23 @@ impl Mesi {
             (MesiState::E, ProcessorAction::Read, true) => (MesiState::E, None),
             (MesiState::S, ProcessorAction::Read, true) => (MesiState::S, None),
             (MesiState::S, ProcessorAction::Write, true) => {
-                (MesiState::M, Some(BusAction::BusRdXMem(tag)))
+                (MesiState::M, Some(BusAction::BusRdXMem(tag, WORD_SIZE)))
             }
 
-            (MesiState::I, ProcessorAction::Read, true) => {
-                (MesiState::E, Some(BusAction::BusRdMem(tag)))
-            }
-            (MesiState::I, ProcessorAction::Write, true) => {
-                (MesiState::M, Some(BusAction::BusRdXMem(tag)))
-            }
-            (_, ProcessorAction::Read, false) => (MesiState::E, Some(BusAction::BusRdMem(tag))),
+            (MesiState::I, ProcessorAction::Read, true) => (
+                MesiState::E,
+                Some(BusAction::BusRdMem(tag, self.block_size)),
+            ),
+            (MesiState::I, ProcessorAction::Write, true) => (
+                MesiState::M,
+                Some(BusAction::BusRdXMem(tag, self.block_size)),
+            ),
+
+            // MISS
+            (_, ProcessorAction::Read, false) => (
+                MesiState::E,
+                Some(BusAction::BusRdMem(tag, self.block_size)),
+            ),
             _ => panic!(
                 "({:?}) Unresolved processor event: {:?}",
                 self.core_id,
@@ -85,13 +97,13 @@ impl Mesi {
     fn bus_snoop_transition(&mut self, bus: &mut Bus) -> Option<Task> {
         // no active tasks means no snooping
         let mut task = match bus.active_task() {
-            Some(t) => t.clone(),
+            Some(t) => t,
             None => return None,
         };
         if task.issuer_id == self.core_id {
             return None;
         }
-        let tag = *task.action;
+        let tag = BusAction::extract_tag(task.action);
         // abort if task tag is not cached => we don't care
         let (state, stored_tag) = match self.idx_of_tag(tag) {
             Some(idx) => &mut self.cache_state[idx],
@@ -101,55 +113,55 @@ impl Mesi {
 
         // save for logging purposes:
         let old_state = *state;
-        let old_task_action = task.action.clone();
+        let old_task_action = task.action;
         let old_task_time = task.remaining_cycles;
 
-        match (&task.action, &state) {
+        match (task.action, &state) {
             // Event: Someone else wants to read (not exclusive) our modified line
             // => transition from M -> S, flush line to main memory (flush cost + transfer to other
             // core cost)
-            (BusAction::BusRdMem(_), MesiState::M) => {
+            (BusAction::BusRdMem(_, c), MesiState::M) => {
                 *state = MesiState::S;
-                task.action = BusAction::BusRdShared(tag);
-                task.remaining_cycles = Bus::price(&BusAction::Flush(0));
+                task.action = BusAction::BusRdShared(tag, c);
+                task.remaining_cycles = Bus::price(&BusAction::Flush(0, self.block_size));
             }
 
             // Event: Someone else wants to readX our modified line
             // => M -> I and Flush
-            (BusAction::BusRdXMem(_), MesiState::M) => {
+            (BusAction::BusRdXMem(_, c), MesiState::M) => {
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(tag);
-                task.remaining_cycles = Bus::price(&BusAction::Flush(0));
+                task.action = BusAction::BusRdShared(tag, c);
+                task.remaining_cycles = Bus::price(&BusAction::Flush(0, self.block_size));
             }
 
             // Event: Someone else wants to read (not X) our exclusive line
             // => E -> S
-            (BusAction::BusRdMem(_), MesiState::E) => {
+            (BusAction::BusRdMem(_, c), MesiState::E) => {
                 *state = MesiState::S;
-                task.action = BusAction::BusRdShared(tag);
+                task.action = BusAction::BusRdShared(tag, c);
                 task.remaining_cycles = Bus::price(&task.action);
             }
 
             // Event: Someone else wants to readX our exclusive line
             // => E -> I
-            (BusAction::BusRdXMem(_), MesiState::E) => {
+            (BusAction::BusRdXMem(_, c), MesiState::E) => {
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(tag);
+                task.action = BusAction::BusRdShared(tag, c);
                 task.remaining_cycles = Bus::price(&task.action);
             }
 
             // Event: Someone else wants to read (not X) our shared line
             // => S -> S and supply line
-            (BusAction::BusRdMem(_), MesiState::S) => {
-                task.action = BusAction::BusRdShared(tag);
+            (BusAction::BusRdMem(_, c), MesiState::S) => {
+                task.action = BusAction::BusRdShared(tag, c);
                 task.remaining_cycles = Bus::price(&task.action);
             }
 
             // Event: Someone else wants to readX our shared line
             // => S -> I but supply line
-            (BusAction::BusRdXMem(_), MesiState::S) => {
+            (BusAction::BusRdXMem(_, c), MesiState::S) => {
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(tag);
+                task.action = BusAction::BusRdShared(tag, c);
                 task.remaining_cycles = Bus::price(&task.action);
             }
             // Ignore bus events that don't change anything
@@ -173,20 +185,20 @@ impl Mesi {
                    task.remaining_cycles
             );
         }
-        Some(task)
+        Some(*task)
     }
 
     fn bus_after_snoop_transition(&mut self, bus: &mut Bus) {
         // no active tasks means no after-snoop
         let task = match bus.active_task() {
-            Some(t) => t.clone(),
+            Some(t) => t,
             None => return,
         };
         // after-snoop only regards actions of other cores on our task
         if task.issuer_id == self.core_id {
             return;
         }
-        let tag = *task.action;
+        let tag = BusAction::extract_tag(task.action);
         // abort if task tag is not cached => we don't care
         let (state, stored_tag) = match self.idx_of_tag(tag) {
             Some(idx) => &mut self.cache_state[idx],
@@ -196,7 +208,7 @@ impl Mesi {
 
         // Event: We read using BusRdMem and some other core changed action to BusRdShared
         // => Value is shared.
-        if let (BusAction::BusRdShared(_), MesiState::E) = (&task.action, &state) {
+        if let (BusAction::BusRdShared(_, _), MesiState::E) = (&task.action, &state) {
             *state = MesiState::S;
             #[cfg(debug_assertions)]
             println!(
@@ -250,5 +262,15 @@ impl Protocol for Mesi {
         let (state, stored_tag) = self.cache_state[cache_idx];
         assert!(stored_tag == tag);
         state == MesiState::M
+    }
+
+    fn is_shared(&self, mut cache_idx: usize, tag: u32) -> bool {
+        if cache_idx == std::usize::MAX {
+            cache_idx = self.idx_of_tag(tag).unwrap();
+        }
+        let (state, stored_tag) = self.cache_state[cache_idx];
+        assert!(stored_tag == tag);
+        assert!(state != MesiState::I);
+        matches!(state, MesiState::S)
     }
 }

@@ -1,65 +1,103 @@
 use serde::{Deserialize, Serialize};
+use shared::bus::BusAction;
+use shared::record;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum LogEntry {
-    EnvInfo(EnvInfo),
+    InitSystem(InitSystem),
+    InitCore(InitCore),
     Step(Step),
-    CoreInit(CoreInit),
-    CoreState(CoreState),
-    CacheState(CacheState),
-    CacheAccess(CacheAccess),
-    CacheUpdate(CacheUpdate),
+    InstrFetch(InstrFetch),
+    CoreHalt(CoreHalt),
+    CoreStallALU(CoreStallALU),
+    CoreStallMemory(CoreStallMemory),
+    CacheMiss(CacheMiss),
+    CacheHit(CacheHit),
+    CachePrivateAccess(CachePrivateAccess),
+    CacheSharedAccess(CacheSharedAccess),
+    BusFinish(BusFinish),
+    BusStart(BusStart),
+    BusClear(BusClear),
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct CoreInit {
-    pub file_name: String,
-    pub id: usize,
-}
-
-#[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct EnvInfo {
+pub struct InitSystem {
     pub protocol: String,
     pub cache_size: usize,
     pub associativity: usize,
     pub block_size: usize,
     pub num_cores: usize,
+    pub archive_name: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct InitCore {
+    pub id: usize,
+    pub file_name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct Step {
-    pub clk: u32,
+    pub clk: usize,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct CoreState {
+pub struct InstrFetch {
     pub id: usize,
-    pub record: Option<String>,
-    pub alu_cnt: u32,
+    pub type_: record::Label,
+    pub arg: u32,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct CacheState {
-    pub core_id: usize,
-    pub cnt: u32,
+pub struct CoreHalt {
+    pub id: usize,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct CacheAccess {
-    pub core_id: usize,
+pub struct CoreStallALU {
+    pub id: usize,
+}
 
-    /// hit = true, miss = false
-    pub hit_or_miss: bool,
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct CoreStallMemory {
+    pub id: usize,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct CacheMiss {
+    pub id: usize,
     pub tag: u32,
-    pub index: usize,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
-pub struct CacheUpdate {
-    pub core_id: usize,
+pub struct CacheHit {
+    pub id: usize,
+    pub tag: u32,
+}
 
-    pub old_tag: Option<u32>,
-    pub new_tag: u32,
-    pub index: usize,
-    pub block: usize,
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct BusFinish {
+    pub issuer_id: usize,
+    pub action: BusAction,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct BusStart {
+    pub issuer_id: usize,
+    pub action: BusAction,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct BusClear {}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct CachePrivateAccess {
+    pub id: usize,
+    pub tag: u32,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct CacheSharedAccess {
+    pub id: usize,
+    pub tag: u32,
 }

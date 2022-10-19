@@ -1,56 +1,18 @@
-use std::ops::Deref;
+use logger::*;
+use shared::bus::BusAction;
+
+use crate::LOGGER;
 
 #[derive(Default, Debug)]
 pub struct Bus {
     task: Option<Task>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Task {
-    pub issuer_id: u32,
-    pub remaining_cycles: u32,
+    pub issuer_id: usize,
+    pub remaining_cycles: usize,
     pub action: BusAction,
-}
-
-// MESI and Dragon bus actions combined
-#[derive(Clone, PartialEq, Eq)]
-pub enum BusAction {
-    BusRdMem(u32),
-    BusRdShared(u32),
-    BusRdXMem(u32),
-    BusRdXShared(u32),
-    BusUpdMem(u32),
-    BusUpdShared(u32),
-    Flush(u32),
-}
-
-impl Deref for BusAction {
-    type Target = u32;
-    fn deref(&self) -> &u32 {
-        match self {
-            BusAction::BusRdMem(n) => n,
-            BusAction::BusRdShared(n) => n,
-            BusAction::BusRdXMem(n) => n,
-            BusAction::BusRdXShared(n) => n,
-            BusAction::BusUpdMem(n) => n,
-            BusAction::BusUpdShared(n) => n,
-            BusAction::Flush(n) => n,
-        }
-    }
-}
-
-impl std::fmt::Debug for BusAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BusAction::BusRdMem(n) => write!(f, "BusRdMem(0x{:x})", n),
-            BusAction::BusRdShared(n) => write!(f, "BusRdShared(0x{:x})", n),
-            BusAction::BusRdXMem(n) => write!(f, "BusRdXMem(0x{:x})", n),
-            BusAction::BusRdXShared(n) => write!(f, "BusRdXShared(0x{:x})", n),
-            BusAction::BusUpdMem(n) => write!(f, "BusUpdMem(0x{:x})", n),
-            BusAction::BusUpdShared(n) => write!(f, "BusUpdShared(0x{:x})", n),
-            BusAction::Flush(n) => write!(f, "Flush(0x{:x})", n),
-        }
-    }
 }
 
 impl Bus {
@@ -59,21 +21,23 @@ impl Bus {
     }
 
     /// Query number of cycles required for the entered action
-    pub fn price(action: &BusAction) -> u32 {
+    pub fn price(action: &BusAction) -> usize {
         match action {
-            BusAction::BusRdMem(_) => 100,
-            BusAction::BusRdShared(_) => 2,
-            BusAction::BusRdXMem(_) => 100,
-            BusAction::BusRdXShared(_) => 2,
-            BusAction::BusUpdMem(_) => 100,
-            BusAction::BusUpdShared(_) => 2,
-            BusAction::Flush(_) => 100,
+            BusAction::BusRdMem(_, _) => 100,
+            BusAction::BusRdShared(_, c) => 2 * (c / 4),
+            BusAction::BusRdXMem(_, _) => 100,
+            BusAction::BusRdXShared(_, c) => 2 * (c / 4),
+            BusAction::BusUpdMem(_, _) => 100,
+            BusAction::BusUpdShared(_, c) => 2 * (c / 4),
+            BusAction::Flush(_, _) => 100,
         }
     }
 
     /// Schedule bus transaction
-    pub fn put_on(&mut self, issuer_id: u32, action: BusAction) {
+    pub fn put_on(&mut self, issuer_id: usize, action: BusAction) {
         assert!(self.task.is_none());
+        LOGGER.write(LogEntry::BusFinish(BusFinish { issuer_id, action }));
+
         self.task = Some(Task {
             issuer_id,
             remaining_cycles: Bus::price(&action),
