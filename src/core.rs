@@ -30,7 +30,7 @@ impl Core {
             .with_prefix(format!("Core {:?}", id));
         pb.set_style(
             ProgressStyle::with_template(
-                "{prefix:.bold.dim} [{wide_bar:.cyan/blue}] {human_pos:>10} / {human_len:>10} ({percent:>3})",
+                "{prefix:.bold.dim} [{wide_bar:.cyan/blue}] {human_pos:>10} / {human_len:>10} ({percent:>3}%)",
             )
             .unwrap()
             .progress_chars("=>-"),

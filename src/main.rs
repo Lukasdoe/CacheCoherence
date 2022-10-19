@@ -49,6 +49,9 @@ fn check_args(args: &ProgramArgs) {
 }
 
 fn main() {
+    // init random generator to be deterministic
+    fastrand::seed(42);
+
     let args = ProgramArgs::parse();
     check_args(&args);
 

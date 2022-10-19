@@ -2,10 +2,12 @@ use crate::bus::Bus;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
+
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 
 pub struct System {
     cores: Vec<Core>,
+    active_cores: Vec<usize>,
     bus: Bus,
     clk: usize,
     progress: ProgressBar,
@@ -47,6 +49,7 @@ impl System {
             mp_bar.set_draw_target(ProgressDrawTarget::hidden());
         }
         System {
+            active_cores: (0..cores.len()).collect(),
             cores,
             bus: Bus::new(),
             clk: 0,
@@ -63,14 +66,14 @@ impl System {
         self.progress.inc(1);
 
         self.bus.update();
-
-        // "at_least_one_core_is_still_working"
-        let mut alocisw = false;
+        fastrand::shuffle(&mut self.active_cores);
 
         // run 1: parse new instructions / update state
-        for core in self.cores.iter_mut() {
-            alocisw = core.step(&mut self.bus) || alocisw;
-        }
+        self.active_cores = self
+            .active_cores
+            .drain(..)
+            .filter(|core_id| self.cores[*core_id].step(&mut self.bus))
+            .collect();
 
         // run 2: snoop other cores' actions
         for core in self.cores.iter_mut() {
@@ -82,10 +85,10 @@ impl System {
             core.after_snoop(&mut self.bus);
         }
 
-        if !alocisw {
+        if self.active_cores.is_empty() {
             println!("Finished after {:?} clock cycles.", self.clk);
         }
-        !alocisw
+        self.active_cores.is_empty()
     }
 
     // TODO: Sanity check
