@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate lazy_static;
 
-use logger::Logger;
+use logger::WLogger;
 
 lazy_static! {
-    pub static ref LOGGER: Logger = Logger::new();
+    pub static ref LOGGER: WLogger = WLogger::new("binlog");
 }
 
 mod bus;

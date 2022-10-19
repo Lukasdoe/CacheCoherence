@@ -47,8 +47,6 @@ impl Cache {
         let offset_length = ((block_size / 4) as f64).log2() as usize;
         let index_length = (num_sets as f64).log2() as usize;
         let tag_length = 32 - (offset_length + index_length);
-        #[cfg(debug_assertions)]
-        println!("{:?} {:?} {:?}", offset_length, index_length, tag_length);
 
         #[cfg(debug_assertions)]
         println!("({:?}) Init cache of size {:?} bytes with {:?} sets of {:?} blocks, each a size of {:?} bytes.",
