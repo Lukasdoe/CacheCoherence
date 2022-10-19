@@ -38,6 +38,7 @@ impl Record {
 }
 pub struct RecordStream {
     pub file_name: String,
+    pub line_count: usize,
     _zip_archive: Box<ZipArchive<File>>,
     lines: Lines<BufReader<ZipFile<'static>>>,
 }
@@ -58,14 +59,29 @@ impl Iterator for RecordStream {
 }
 
 impl RecordStream {
-    pub fn new(file_name: String, zip_archive: ZipArchive<std::fs::File>) -> Self {
+    pub fn new(
+        file_name: String,
+        zip_archive: ZipArchive<std::fs::File>,
+        count_lines: bool,
+    ) -> Self {
         let mut archive = Box::new(zip_archive);
+
+        let line_count = if count_lines {
+            BufReader::new(archive.by_name(&file_name).unwrap())
+                .lines()
+                .count()
+        } else {
+            0
+        };
+
         let zip_file = unsafe {
             std::mem::transmute::<_, ZipFile<'static>>(archive.by_name(&file_name).unwrap())
         };
+
         RecordStream {
             file_name,
             _zip_archive: archive,
+            line_count,
             lines: BufReader::new(zip_file).lines(),
         }
     }

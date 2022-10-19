@@ -3,12 +3,14 @@ use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
 use crate::record::{Label, RecordStream};
 use crate::utils::Counter;
+use indicatif::*;
 
 pub struct Core {
     cache: Cache,
     alu: Counter,
     records: RecordStream,
     id: usize,
+    progress_bar: ProgressBar,
 }
 
 impl Core {
@@ -19,12 +21,24 @@ impl Core {
         block_size: usize,
         records: RecordStream,
         id: usize,
+        mp_bar: &MultiProgress,
     ) -> Self {
         println!("({:?}) loaded {:?}", id, records.file_name);
 
+        let pb = mp_bar
+            .add(ProgressBar::new(records.line_count as u64))
+            .with_prefix(format!("Core {:?}", id));
+        pb.set_style(
+            ProgressStyle::with_template(
+                "{prefix:.bold.dim} [{wide_bar:.cyan/blue}] {human_pos:>10} / {human_len:>10} ({percent:>3})",
+            )
+            .unwrap()
+            .progress_chars("=>-"),
+        );
         Core {
             cache: Cache::new(id, cache_size, associativity, block_size, protocol),
             alu: Counter::new(),
+            progress_bar: pb,
             records,
             id,
         }
@@ -43,6 +57,8 @@ impl Core {
                 "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
             );
+            self.progress_bar.inc(1);
+
             match (&record.label, record.value) {
                 (Label::Load, ref value) => self.cache.load(*value),
                 (Label::Store, ref value) => self.cache.store(*value),
@@ -53,6 +69,7 @@ impl Core {
             self.cache.update(bus);
             true
         } else {
+            self.progress_bar.finish();
             false
         }
     }

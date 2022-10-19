@@ -6,25 +6,29 @@ use clap::Parser;
     about = "\x1b[1mCACHER\x1b[0m - \x1b[1mCA\x1b[0mche \x1b[1mC\x1b[0mo\x1b[1mH\x1b[0merence \x1b[1mE\x1b[0mmulato\x1b[1mR\x1b[0m",
     long_about = None)]
 struct ProgramArgs {
-    /// cache coherence protocol
+    /// Cache coherence protocol
     #[clap(arg_enum, value_parser)]
     protocol: ProtocolKind,
 
-    /// path to the benchmark archive, e.g. "./blackscholes_four.zip"
+    /// Path to the benchmark archive, e.g. "./blackscholes_four.zip"
     #[clap(value_parser)]
     input_file: String,
 
-    /// cache size in bytes
+    /// Cache size in bytes
     #[clap(value_parser)]
     cache_size: usize,
 
-    /// cache associativity
+    /// Cache associativity
     #[clap(value_parser)]
     associativity: usize,
 
-    /// cache block size in bytes
+    /// Cache block size in bytes
     #[clap(value_parser)]
     block_size: usize,
+
+    /// Disable progress display
+    #[clap(short, long)]
+    no_progress: bool,
 }
 
 // taken from https://stackoverflow.com/a/600306
@@ -48,7 +52,7 @@ fn main() {
     let args = ProgramArgs::parse();
     check_args(&args);
 
-    let record_streams = match FileLoader::open(&args.input_file) {
+    let record_streams = match FileLoader::open(&args.input_file, !args.no_progress) {
         Ok(streams) => streams,
         Err(e) => {
             println!(
@@ -65,6 +69,7 @@ fn main() {
         args.associativity,
         args.block_size,
         record_streams,
+        !args.no_progress,
     );
 
     loop {
