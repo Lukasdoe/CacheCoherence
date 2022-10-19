@@ -1,0 +1,80 @@
+\documentclass[a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage[pass]{geometry}
+\usepackage{multicol}
+\usepackage{amssymb}
+
+\definecolor{gray}{rgb}{0.99,0.99,0.95}
+\definecolor{green}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+\RequirePackage[T1]{fontenc} \RequirePackage[tt=false, type1=true]{libertine} \RequirePackage[varqu]{zi4} \RequirePackage[libertine]{newtxmath}
+
+
+\newcommand{\hlinetext}[0]{\noindent\rule{\linewidth}{0.2pt}}
+
+\lstset{frame=tb,
+ language=Matlab,
+ aboveskip=3mm,
+ belowskip=3mm,
+ showstringspaces=false,
+ columns=flexible,
+ basicstyle={\small\ttfamily},
+ numbers=none,
+ numberstyle=\tiny\color{gray},
+ keywordstyle=\color{blue},
+ commentstyle=\color{green},
+ stringstyle=\color{mauve},
+ breaklines=true,
+ breakatwhitespace=true,
+ tabsize=3
+}
+
+\title{Cache Coherence Simulator}
+\author{Axel Lundberg \and Lukas Doellerer}
+\date{}
+
+\bibliographystyle{plain}
+
+\begin{document}
+%\savegeometry{original}
+%\newgeometry{margin=40pt, top=40pt, bottom=80pt}
+
+\maketitle
+\tableofcontents
+
+\newpage
+\section{Introduction}
+\input{1_introduction}
+
+\newpage
+\section{Method}
+\input{3_method}
+
+\newpage
+\section{Results}
+\input{4_results}
+
+\newpage
+\section{Conclusion}
+\input{8_conclusion}
+
+\newpage
+\bibliography{refs.bib}
+
+\end{document}
