@@ -78,11 +78,19 @@ impl System {
         self.active_cores.shuffle(&mut self.rng);
 
         // run 1: parse new instructions / update state
-        self.active_cores = self
-            .active_cores
-            .drain(..)
-            .filter(|core_id| self.cores[*core_id].step(&mut self.bus))
-            .collect();
+        let mut deactivated_cores: Vec<usize> = Vec::new();
+        for core_id in &self.active_cores {
+            if !self.cores[*core_id].step(&mut self.bus) {
+                deactivated_cores.push(*core_id);
+            }
+        }
+        if !deactivated_cores.is_empty() {
+            self.active_cores = self
+                .active_cores
+                .drain(..)
+                .filter(|c| !deactivated_cores.contains(c))
+                .collect();
+        }
 
         // run 2: snoop other cores' actions
         for core in self.cores.iter_mut() {
