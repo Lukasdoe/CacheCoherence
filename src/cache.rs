@@ -1,9 +1,8 @@
-use crate::bus::Task;
+use crate::analyzer::Analyzable;
+use crate::bus::{BusAction, Task};
 use crate::protocol::{ProcessorAction, Protocol, ProtocolBuilder, ProtocolKind};
 use crate::utils::AddressLayout;
-use crate::{Bus, LOGGER};
-use logger::*;
-use shared::bus::BusAction;
+use crate::Bus;
 use std::collections::VecDeque;
 
 const PLACEHOLDER_TAG: u32 = 0;
@@ -20,6 +19,15 @@ pub struct Cache {
 
     // Queue of waiting instructions (address, action)
     scheduled_instructions: VecDeque<(u32, ProcessorAction)>,
+    stats: CacheStats,
+}
+
+#[derive(Default)]
+struct CacheStats {
+    pub num_data_cache_misses: usize,
+    pub num_data_cache_hits: usize,
+    pub num_private_data_access: usize,
+    pub num_shared_data_access: usize,
 }
 
 impl Cache {
@@ -65,6 +73,7 @@ impl Cache {
             ),
             addr_layout,
             scheduled_instructions: VecDeque::new(),
+            stats: CacheStats::default(),
         }
     }
 
@@ -135,17 +144,11 @@ impl Cache {
                 return;
             }
             let addr = BusAction::extract_addr(action);
-            LOGGER.write(if self.protocol.is_shared(std::usize::MAX, addr) {
-                LogEntry::CacheSharedAccess(CacheSharedAccess {
-                    id: self.core_id,
-                    addr,
-                })
+            if self.protocol.is_shared(std::usize::MAX, addr) {
+                self.stats.num_shared_data_access += 1;
             } else {
-                LogEntry::CachePrivateAccess(CachePrivateAccess {
-                    id: self.core_id,
-                    addr,
-                })
-            });
+                self.stats.num_private_data_access += 1;
+            }
         }
     }
 
@@ -232,32 +235,20 @@ impl Cache {
 
         if let Some((set_idx, block_idx)) = store_idx {
             self.log_access(set_idx, block_idx);
-            LOGGER.write(LogEntry::CacheHit(CacheHit {
-                id: self.core_id,
-                addr,
-            }));
+            self.stats.num_data_cache_hits += 1;
 
             if bus_action.is_none() {
-                LOGGER.write(if self.protocol.is_shared(flat_store_idx.unwrap(), addr) {
-                    LogEntry::CacheSharedAccess(CacheSharedAccess {
-                        id: self.core_id,
-                        addr,
-                    })
+                if self.protocol.is_shared(flat_store_idx.unwrap(), addr) {
+                    self.stats.num_shared_data_access += 1;
                 } else {
-                    LogEntry::CachePrivateAccess(CachePrivateAccess {
-                        id: self.core_id,
-                        addr,
-                    })
-                });
+                    self.stats.num_private_data_access += 1;
+                }
             }
         } else {
             // the memory for this is already flushed to main memory
             // TODO: should we flush to other cores? => nah
             self.insert_and_evict(addr);
-            LOGGER.write(LogEntry::CacheMiss(CacheMiss {
-                id: self.core_id,
-                addr,
-            }));
+            self.stats.num_data_cache_misses += 1;
         }
 
         #[cfg(verbose)]
@@ -428,5 +419,15 @@ impl Lru {
                 .unwrap()
                 .0,
         )
+    }
+}
+
+impl Analyzable for Cache {
+    fn report(&self, stats: &mut crate::analyzer::Stats) {
+        let c_stats = &mut stats.cores[self.core_id];
+        c_stats.num_data_cache_hits = self.stats.num_data_cache_hits;
+        c_stats.num_data_cache_misses = self.stats.num_data_cache_misses;
+        stats.num_private_data_access += self.stats.num_private_data_access;
+        stats.num_shared_data_access += self.stats.num_shared_data_access;
     }
 }

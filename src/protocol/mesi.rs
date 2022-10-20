@@ -1,8 +1,7 @@
 use super::{ProcessorAction, Protocol};
-use crate::bus::{Bus, Task};
+use crate::bus::{Bus, BusAction, Task};
 use crate::system::WORD_SIZE;
 use crate::utils::AddressLayout;
-use shared::bus::BusAction;
 use std::vec::Vec;
 
 const PLACEHOLDER_TAG: u32 = 0;

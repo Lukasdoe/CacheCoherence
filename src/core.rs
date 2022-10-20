@@ -1,12 +1,10 @@
+use crate::analyzer::Analyzable;
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
-use crate::record::RecordStream;
+use crate::record::{Label, RecordStream};
 use crate::utils::Counter;
-use crate::LOGGER;
 use indicatif::*;
-use logger::*;
-use shared::record::Label;
 
 pub struct Core {
     cache: Cache,
@@ -14,6 +12,16 @@ pub struct Core {
     records: RecordStream,
     id: usize,
     progress_bar: ProgressBar,
+    stats: CoreStats,
+}
+
+#[derive(Default)]
+struct CoreStats {
+    pub file_name: String,
+    pub exec_cycles: usize,
+    pub compute_cycles: usize,
+    pub mem_ops: usize,
+    pub idle_cycles: usize,
 }
 
 impl Core {
@@ -27,10 +35,6 @@ impl Core {
         mp_bar: &MultiProgress,
     ) -> Self {
         println!("({:?}) loaded {:?}", id, records.file_name);
-        LOGGER.write(LogEntry::InitCore(InitCore {
-            id,
-            file_name: records.file_name.clone(),
-        }));
 
         let pb = mp_bar
             .add(ProgressBar::new(records.line_count as u64))
@@ -46,20 +50,23 @@ impl Core {
             cache: Cache::new(id, cache_size, associativity, block_size, protocol),
             alu: Counter::new(),
             progress_bar: pb,
-            records,
             id,
+            stats: CoreStats {
+                file_name: records.file_name.clone(),
+                ..CoreStats::default()
+            },
+            records,
         }
     }
 
     /// Simulate one cycle. Return false if no more instructions are left to process.
-    pub fn step(&mut self, bus: &mut Bus) -> bool {
+    pub fn step(&mut self, bus: &mut Bus, clk: usize) -> bool {
         // stall, if required. Remember: if they return false, then they didn't work yet.
         if self.alu.update() {
-            LOGGER.write(LogEntry::CoreStallALU(CoreStallALU { id: self.id }));
             return true;
         }
         if self.cache.update(bus) {
-            LOGGER.write(LogEntry::CoreStallMemory(CoreStallMemory { id: self.id }));
+            self.stats.idle_cycles += 1;
             return true;
         }
 
@@ -69,11 +76,11 @@ impl Core {
                 "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
             );
-            LOGGER.write(LogEntry::InstrFetch(InstrFetch {
-                id: self.id,
-                type_: record.label,
-                arg: record.value,
-            }));
+            match record.label {
+                Label::Load | Label::Store => self.stats.mem_ops += 1,
+                Label::Other => self.stats.compute_cycles += record.value as usize,
+            };
+
             self.progress_bar.inc(1);
 
             match (&record.label, record.value) {
@@ -86,7 +93,7 @@ impl Core {
             self.cache.update(bus);
             true
         } else {
-            LOGGER.write(LogEntry::CoreHalt(CoreHalt { id: self.id }));
+            self.stats.exec_cycles = clk;
             self.progress_bar.finish();
             false
         }
@@ -103,5 +110,19 @@ impl Core {
     #[cfg(sanity_check)]
     pub fn sanity_check(&self) {
         self.cache.sanity_check();
+    }
+}
+
+impl Analyzable for Core {
+    fn report(&self, stats: &mut crate::analyzer::Stats) {
+        let c_stats = &mut stats.cores[self.id];
+        c_stats.file_name = self.stats.file_name.clone();
+        c_stats.exec_cycles = self.stats.exec_cycles;
+
+        c_stats.compute_cycles = self.stats.compute_cycles;
+        c_stats.mem_ops = self.stats.mem_ops;
+        c_stats.idle_cycles = self.stats.idle_cycles;
+
+        self.cache.report(stats);
     }
 }

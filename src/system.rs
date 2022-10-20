@@ -1,10 +1,8 @@
-use logger::{LogEntry, Step};
-
-use crate::bus::Bus;
+use crate::analyzer::CoreStats;
 use crate::core::Core;
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
-use crate::LOGGER;
+use crate::{analyzer::Analyzable, bus::Bus};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use rand::{rngs::mock::StepRng, seq::SliceRandom};
 
@@ -74,7 +72,6 @@ impl System {
         #[cfg(verbose)]
         println!("Step {:?}", self.clk);
         self.progress.inc(1);
-        LOGGER.write(LogEntry::Step(Step { clk: self.clk }));
 
         self.bus.update();
         self.active_cores.shuffle(&mut self.rng);
@@ -82,7 +79,7 @@ impl System {
         // run 1: parse new instructions / update state
         let mut deactivated_cores: Vec<usize> = Vec::new();
         for core_id in &self.active_cores {
-            if !self.cores[*core_id].step(&mut self.bus) {
+            if !self.cores[*core_id].step(&mut self.bus, self.clk) {
                 deactivated_cores.push(*core_id);
             }
         }
@@ -124,5 +121,14 @@ impl System {
 
     pub fn hide_progress(&self) {
         self.mp_bar.set_draw_target(ProgressDrawTarget::hidden());
+    }
+}
+
+impl Analyzable for System {
+    fn report(&self, stats: &mut crate::analyzer::Stats) {
+        stats.exec_cycles = self.clk;
+        (0..self.cores.len()).for_each(|_| stats.cores.push(CoreStats::default()));
+        self.cores.iter().for_each(|c| c.report(stats));
+        self.bus.report(stats);
     }
 }

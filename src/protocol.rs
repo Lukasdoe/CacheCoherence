@@ -1,9 +1,8 @@
 use crate::{
-    bus::{Bus, Task},
+    bus::{Bus, BusAction, Task},
     utils::AddressLayout,
 };
 use clap::ArgEnum;
-use shared::bus::BusAction;
 
 pub mod dragon;
 pub mod mesi;

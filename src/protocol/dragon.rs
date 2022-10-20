@@ -1,9 +1,8 @@
 use super::{ProcessorAction, Protocol};
-use crate::bus::{Bus, Task};
+use crate::bus::{Bus, BusAction, Task};
 use crate::system::WORD_SIZE;
 use crate::utils::AddressLayout;
 use core::panic;
-use shared::bus::BusAction;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum DragonState {

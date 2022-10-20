@@ -1,8 +1,5 @@
-use analyzer::Analyzer;
-use cacher::LOGGER;
-use cacher::{FileLoader, ProtocolKind, System};
+use cacher::{Analyzer, FileLoader, ProtocolKind, System};
 use clap::Parser;
-use logger::{InitSystem, LogEntry, RLogger};
 
 #[derive(Parser, Debug)]
 #[clap(version,
@@ -66,14 +63,6 @@ fn main() {
         }
     };
 
-    LOGGER.write(LogEntry::InitSystem(InitSystem {
-        protocol: format!("{:?}", &args.protocol),
-        cache_size: args.cache_size,
-        associativity: args.associativity,
-        block_size: args.block_size,
-        num_cores: record_streams.len(),
-        archive_name: String::from(&args.input_file),
-    }));
     let mut system = System::new(
         &args.protocol,
         args.cache_size,
@@ -90,15 +79,12 @@ fn main() {
     }
     system.hide_progress();
 
-    let mut read_logger = RLogger::new("binlog");
-    let result = match Analyzer::extract_stats(&mut read_logger) {
-        Ok(r) => r,
-        Err(err) => panic!("{err:?}"),
-    };
+    let mut analyzer = Analyzer::new();
+    analyzer.digest(system);
     println!(
         "\n#################\n\
          Analysis Results:\n\
          #################\n"
     );
-    println!("{}", Analyzer::pretty_print(&result));
+    println!("{}", analyzer.pretty_print());
 }
