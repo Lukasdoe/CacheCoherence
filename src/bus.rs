@@ -93,16 +93,6 @@ impl Bus {
     /// Schedule bus transaction
     pub fn put_on(&mut self, issuer_id: usize, action: BusAction) {
         assert!(self.task.is_none());
-
-        match action {
-            BusAction::BusUpdMem(_, _)
-            | BusAction::BusUpdShared(_, _)
-            | BusAction::BusRdXMem(_, _)
-            | BusAction::BusRdXShared(_, _) => self.stats.num_invalid_or_upd += 1,
-            _ => (),
-        }
-        self.stats.traffic += BusAction::extract_size(action);
-
         self.task = Some(Task {
             issuer_id,
             remaining_cycles: Bus::price(&action),
@@ -130,10 +120,18 @@ impl Bus {
         let task = self.task.as_mut().unwrap();
         match task.remaining_cycles {
             0 => {
-                self.task = None;
+                match task.action {
+                    BusAction::BusUpdMem(_, _)
+                    | BusAction::BusUpdShared(_, _)
+                    | BusAction::BusRdXMem(_, _)
+                    | BusAction::BusRdXShared(_, _) => self.stats.num_invalid_or_upd += 1,
+                    _ => (),
+                }
+                self.stats.traffic += BusAction::extract_size(task.action);
 
                 #[cfg(verbose)]
                 println!("Bus: empty");
+                self.task = None;
             }
             i => {
                 task.remaining_cycles = i - 1;

@@ -40,11 +40,11 @@ impl Analyzer {
     pub fn pretty_print(&self) -> String {
         let mut s = String::new();
         s.push_str(&format!(
-            "# Execution Cycles (total):    {:?}\n\
-             # Private Data Accesses:       {:?}\n\
-             # Shared Data Accesses:        {:?}\n\
-             Bus Traffic:                   {:?}\n\
-             Bus Invalidations or Updates:  {:?}\n
+            "No. Execution Cycles (total):      {:?}\n\
+             No. Private Data Accesses:         {:?}\n\
+             No. Shared Data Accesses:          {:?}\n\
+             Bus Traffic:                       {:?} Bytes\n\
+             No. Bus Invalidations or Updates:  {:?}\n
              \
              Core Statistics:\n",
             self.stats.exec_cycles,
@@ -56,12 +56,12 @@ impl Analyzer {
         for (id, core) in self.stats.cores.iter().enumerate() {
             s.push_str(&format!(
                 "\tCore {:?} ({:?}):\n\
-                 \t\tExecution Cycles:     {:?}\n\
-                 \t\tComputation Cycles:   {:?}\n\
-                 \t\tIdle Cycles:          {:?}\n\
-                 \t\t# Memory Operations:  {:?}\n\
-                 \t\t# Data Cache Hits:    {:?}\n\
-                 \t\t# Data Cache Misses:  {:?}\n\n",
+                 \t\tExecution Cycles:       {:?}\n\
+                 \t\tComputation Cycles:     {:?}\n\
+                 \t\tIdle Cycles:            {:?}\n\
+                 \t\tNo. Memory Operations:  {:?}\n\
+                 \t\tNo. Data Cache Hits:    {:?}\n\
+                 \t\tNo. Data Cache Misses:  {:?}\n\n",
                 id,
                 core.file_name,
                 core.exec_cycles,

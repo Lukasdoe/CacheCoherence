@@ -238,7 +238,7 @@ impl Mesi {
     }
 
     fn idx_of_addr(&self, addr: u32) -> Option<usize> {
-        let start_idx = self.addr_layout.index(addr);
+        let start_idx = self.addr_layout.index(addr) * self.associativity;
         let tag = self.addr_layout.tag(addr);
         (start_idx..(start_idx + self.associativity)).find(|&i| self.cache_state[i].1 == tag)
     }

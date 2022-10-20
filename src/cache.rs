@@ -342,8 +342,8 @@ impl Cache {
     fn log_access(&mut self, set_idx: usize, block_idx: usize) {
         #[cfg(verbose)]
         println!(
-            "({:?}) Tag {:#x} accessed, resetting Lru val from {:#x} to 0.",
-            self.core_id, self.cache[set_idx][block_idx], self.lru_storage[set_idx][block_idx]
+            "({:?}) Tag {:#x} accessed, updating LRU",
+            self.core_id, self.cache[set_idx][block_idx]
         );
 
         self.lru.update(set_idx, block_idx);
