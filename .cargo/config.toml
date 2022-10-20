@@ -1,0 +1,2 @@
+[build]
+rustflags = '' # --cfg verbose, sanity_check

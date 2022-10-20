@@ -58,7 +58,7 @@ impl Bus {
     /// Advance current bus transaction by one cycle (if any)
     pub fn update(&mut self) {
         if !self.occupied() {
-            #[cfg(debug_assertions)]
+            #[cfg(verbose)]
             println!("Bus: empty");
             return;
         }
@@ -67,12 +67,12 @@ impl Bus {
             0 => {
                 self.task = None;
 
-                #[cfg(debug_assertions)]
+                #[cfg(verbose)]
                 println!("Bus: empty");
             }
             i => {
                 task.remaining_cycles = i - 1;
-                #[cfg(debug_assertions)]
+                #[cfg(verbose)]
                 println!(
                     "Bus: {:?} by {:?}, remaining: {:?}",
                     self.task.as_ref().unwrap().action,

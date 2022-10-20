@@ -69,7 +69,7 @@ impl System {
     /// Returns true on end of simulation (all instructions executed).
     pub fn update(&mut self) -> bool {
         self.clk += 1;
-        #[cfg(debug_assertions)]
+        #[cfg(verbose)]
         println!("Step {:?}", self.clk);
         self.progress.inc(1);
         LOGGER.write(LogEntry::Step(Step { clk: self.clk }));
@@ -105,8 +105,18 @@ impl System {
         if self.active_cores.is_empty() {
             println!("Finished after {:?} clock cycles.", self.clk);
         }
+
+        #[cfg(sanity_check)]
+        self.sanity_check();
         self.active_cores.is_empty()
     }
 
-    // TODO: Sanity check
+    // compare cache state and cache protocol state
+    #[cfg(sanity_check)]
+    fn sanity_check(&self) {
+        println!("Performing expensive sanity check.");
+        for core in &self.cores {
+            core.sanity_check();
+        }
+    }
 }

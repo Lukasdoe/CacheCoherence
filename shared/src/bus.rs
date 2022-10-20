@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 // MESI and Dragon bus actions combined
-/// BusAction(tag, size_in_bytes)
+/// BusAction(address, size_in_bytes)
 #[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum BusAction {
     BusRdMem(u32, usize),
@@ -14,7 +14,7 @@ pub enum BusAction {
 }
 
 impl BusAction {
-    pub fn extract_tag(action: BusAction) -> u32 {
+    pub fn extract_addr(action: BusAction) -> u32 {
         match action {
             BusAction::BusRdMem(n, _) => n,
             BusAction::BusRdShared(n, _) => n,

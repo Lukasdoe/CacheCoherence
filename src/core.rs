@@ -64,7 +64,7 @@ impl Core {
         }
 
         if let Some(record) = self.records.next() {
-            #[cfg(debug_assertions)]
+            #[cfg(verbose)]
             println!(
                 "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
@@ -98,5 +98,10 @@ impl Core {
 
     pub fn after_snoop(&mut self, bus: &mut Bus) {
         self.cache.after_snoop(bus);
+    }
+
+    #[cfg(sanity_check)]
+    pub fn sanity_check(&self) {
+        self.cache.sanity_check();
     }
 }

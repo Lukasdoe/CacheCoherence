@@ -66,13 +66,13 @@ pub struct CoreStallMemory {
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct CacheMiss {
     pub id: usize,
-    pub tag: u32,
+    pub addr: u32,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct CacheHit {
     pub id: usize,
-    pub tag: u32,
+    pub addr: u32,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
@@ -93,11 +93,11 @@ pub struct BusClear {}
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct CachePrivateAccess {
     pub id: usize,
-    pub tag: u32,
+    pub addr: u32,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq)]
 pub struct CacheSharedAccess {
     pub id: usize,
-    pub tag: u32,
+    pub addr: u32,
 }
