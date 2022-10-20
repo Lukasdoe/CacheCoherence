@@ -1,4 +1,4 @@
-use cacher::{FileLoader, ProtocolKind, System};
+use cacher::{Analyzer, FileLoader, ProtocolKind, System};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -77,4 +77,14 @@ fn main() {
             break;
         }
     }
+    system.hide_progress();
+
+    let mut analyzer = Analyzer::new();
+    analyzer.digest(system);
+    println!(
+        "\n#################\n\
+         Analysis Results:\n\
+         #################\n"
+    );
+    println!("{}", analyzer.pretty_print());
 }

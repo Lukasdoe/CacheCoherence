@@ -1,3 +1,4 @@
+mod analyzer;
 mod bus;
 mod cache;
 mod core;
@@ -7,6 +8,7 @@ mod record;
 mod system;
 mod utils;
 
+pub use crate::analyzer::Analyzer;
 pub use crate::bus::Bus;
 pub use crate::core::Core;
 pub use crate::loader::FileLoader;

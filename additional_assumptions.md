@@ -34,3 +34,6 @@
 - Dragon Protocol: (From Sm, Sc) On a PrWr, a BusUpd is scheduled. If no other cache responds to the
   update then the bus is cleared in the same cycle. This way, the cache can check if other caches
   still hold the value and if not, only block the bus for one cycle.
+- If a valid version of the cache line is in the cache (hit), only single words are updated / read /
+  write. If there is not valid version in the cache (miss) or invalid, the full cache line
+  (block_size) is transmitted via the bus. For write-backs, also the full cache line is transmitted.

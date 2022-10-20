@@ -3,16 +3,16 @@ use std::io::{BufRead, BufReader, Lines};
 use zip::{read::ZipFile, ZipArchive};
 
 #[derive(Debug)]
+pub struct Record {
+    pub label: Label,
+    pub value: u32,
+}
+
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Label {
     Load,
     Store,
     Other,
-}
-
-#[derive(Debug)]
-pub struct Record {
-    pub label: Label,
-    pub value: u32,
 }
 
 impl Record {

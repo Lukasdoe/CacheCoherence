@@ -1,3 +1,4 @@
+use crate::analyzer::Analyzable;
 use crate::bus::Bus;
 use crate::cache::Cache;
 use crate::protocol::ProtocolKind;
@@ -11,6 +12,16 @@ pub struct Core {
     records: RecordStream,
     id: usize,
     progress_bar: ProgressBar,
+    stats: CoreStats,
+}
+
+#[derive(Default)]
+struct CoreStats {
+    pub file_name: String,
+    pub exec_cycles: usize,
+    pub compute_cycles: usize,
+    pub mem_ops: usize,
+    pub idle_cycles: usize,
 }
 
 impl Core {
@@ -39,24 +50,37 @@ impl Core {
             cache: Cache::new(id, cache_size, associativity, block_size, protocol),
             alu: Counter::new(),
             progress_bar: pb,
-            records,
             id,
+            stats: CoreStats {
+                file_name: records.file_name.clone(),
+                ..CoreStats::default()
+            },
+            records,
         }
     }
 
     /// Simulate one cycle. Return false if no more instructions are left to process.
-    pub fn step(&mut self, bus: &mut Bus) -> bool {
+    pub fn step(&mut self, bus: &mut Bus, clk: usize) -> bool {
         // stall, if required. Remember: if they return false, then they didn't work yet.
-        if self.alu.update() || self.cache.update(bus) {
+        if self.alu.update() {
+            return true;
+        }
+        if self.cache.update(bus) {
+            self.stats.idle_cycles += 1;
             return true;
         }
 
         if let Some(record) = self.records.next() {
-            #[cfg(debug_assertions)]
+            #[cfg(verbose)]
             println!(
                 "({:?}) Processing new: {:?} {:#x}",
                 self.id, record.label, record.value
             );
+            match record.label {
+                Label::Load | Label::Store => self.stats.mem_ops += 1,
+                Label::Other => self.stats.compute_cycles += record.value as usize,
+            };
+
             self.progress_bar.inc(1);
 
             match (&record.label, record.value) {
@@ -69,6 +93,7 @@ impl Core {
             self.cache.update(bus);
             true
         } else {
+            self.stats.exec_cycles = clk;
             self.progress_bar.finish();
             false
         }
@@ -80,5 +105,24 @@ impl Core {
 
     pub fn after_snoop(&mut self, bus: &mut Bus) {
         self.cache.after_snoop(bus);
+    }
+
+    #[cfg(sanity_check)]
+    pub fn sanity_check(&self) {
+        self.cache.sanity_check();
+    }
+}
+
+impl Analyzable for Core {
+    fn report(&self, stats: &mut crate::analyzer::Stats) {
+        let c_stats = &mut stats.cores[self.id];
+        c_stats.file_name = self.stats.file_name.clone();
+        c_stats.exec_cycles = self.stats.exec_cycles;
+
+        c_stats.compute_cycles = self.stats.compute_cycles;
+        c_stats.mem_ops = self.stats.mem_ops;
+        c_stats.idle_cycles = self.stats.idle_cycles;
+
+        self.cache.report(stats);
     }
 }

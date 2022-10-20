@@ -1,5 +1,9 @@
-use crate::bus::{Bus, BusAction, Task};
+use crate::{
+    bus::{Bus, BusAction, Task},
+    utils::AddressLayout,
+};
 use clap::ArgEnum;
+
 pub mod dragon;
 pub mod mesi;
 
@@ -40,9 +44,19 @@ pub trait Protocol {
 
     /// true if this cache is the owner of the line. Should cause a flush bus transaction.
     fn writeback_required(&self, cache_idx: usize, tag: u32) -> bool;
+
+    /// mark cache line as invalid
+    fn invalidate(&mut self, cache_idx: usize, tag: u32);
+
+    /// true if cache line with the supplied tag and index is shared
+    fn is_shared(&self, cache_idx: usize, addr: u32) -> bool;
+
+    /// (debugging only) receive the stored tag for the given cache idx (if any)
+    #[cfg(sanity_check)]
+    fn sanity_check(&self, cache_idx: usize) -> Option<u32>;
 }
 
-#[derive(Clone, Debug, ArgEnum)]
+#[derive(Clone, Copy, Debug, ArgEnum)]
 pub enum ProtocolKind {
     Mesi,
     Dragon,
@@ -52,14 +66,28 @@ pub struct ProtocolBuilder;
 
 impl ProtocolBuilder {
     pub fn create(
-        core_id: u32,
+        core_id: usize,
         kind: &ProtocolKind,
         cache_size: usize,
         block_size: usize,
+        associativity: usize,
+        addr_layout: &AddressLayout,
     ) -> Box<dyn Protocol> {
         match kind {
-            ProtocolKind::Dragon => Box::new(dragon::Dragon::new(core_id, cache_size, block_size)),
-            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(core_id, cache_size, block_size)),
+            ProtocolKind::Dragon => Box::new(dragon::Dragon::new(
+                core_id,
+                cache_size,
+                block_size,
+                associativity,
+                addr_layout,
+            )),
+            ProtocolKind::Mesi => Box::new(mesi::Mesi::new(
+                core_id,
+                cache_size,
+                block_size,
+                associativity,
+                addr_layout,
+            )),
         }
     }
 }
