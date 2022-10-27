@@ -322,6 +322,10 @@ impl Cache {
 
     /// Test if supplied addr's tag is currently cached.
     /// Returns first index of block in flat cache.
+    ///
+    /// TODO: If the address is within index and offset
+    /// bits the tag field will equal 0 and a match will
+    /// occur even though the address is not in the cache
     fn search(&self, addr: u32) -> Option<(usize, usize)> {
         let set_idx = self.addr_layout.index(addr);
         let cache_set = self.cache.get(set_idx)?;

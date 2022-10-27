@@ -25,7 +25,7 @@ pub trait Analyzable {
 
 #[derive(Default, Debug)]
 pub struct Analyzer {
-    stats: Stats,
+    pub stats: Stats,
 }
 
 impl Analyzer {
