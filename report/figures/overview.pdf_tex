@@ -1,0 +1,82 @@
+%% Creator: Inkscape 1.2.1 (9c6d41e, 2022-07-14), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'overview.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{680.31496063bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.275)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0.07750307,0.13088144){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Zip Archive\end{tabular}}}}%
+    \put(0.32412113,0.24301217){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Parser\end{tabular}}}}%
+    \put(0.33286126,0.19702918){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}File 1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{overview.pdf}}%
+    \put(0.75337702,0.24063479){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}System\end{tabular}}}}%
+    \put(0.45111551,0.21423124){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Record Stream\end{tabular}}}}%
+    \put(0.85959047,0.19823844){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Bus\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{overview.pdf}}%
+    \put(0.35050017,0.1293033){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{overview.pdf}}%
+    \put(0.33286126,0.06000678){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}File n\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{overview.pdf}}%
+    \put(0.67186063,0.19702918){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Core 1\end{tabular}}}}%
+    \put(0.77261594,0.1973678){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}L1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{overview.pdf}}%
+    \put(0.68949954,0.1293033){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}...\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{overview.pdf}}%
+    \put(0.67186063,0.06000678){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Core n\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{overview.pdf}}%
+    \put(0.77261594,0.1973678){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}L1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{overview.pdf}}%
+    \put(0.77261594,0.13022531){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}L1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{overview.pdf}}%
+    \put(0.77261594,0.06030585){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}L1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{overview.pdf}}%
+  \end{picture}%
+\endgroup%

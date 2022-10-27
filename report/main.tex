@@ -16,6 +16,17 @@
 \usepackage[pass]{geometry}
 \usepackage{multicol}
 \usepackage{amssymb}
+\usepackage{tikz}
+
+\usepackage{import}
+\usepackage{xifthen}
+\usepackage{pdfpages}
+\usepackage{transparent}
+
+\newcommand{\incfig}[1]{%
+    \def\svgwidth{\columnwidth}
+    \import{./figures/}{#1.pdf_tex}
+}
 
 \definecolor{gray}{rgb}{0.99,0.99,0.95}
 \definecolor{green}{rgb}{0,0.6,0}
@@ -49,11 +60,12 @@
 \author{Axel Lundberg \and Lukas Doellerer}
 \date{}
 
-\bibliographystyle{plain}
+%\bibliographystyle{plain}
 
 \begin{document}
-%\savegeometry{original}
+\savegeometry{original}
 %\newgeometry{margin=40pt, top=40pt, bottom=80pt}
+\newgeometry{left=90pt, right=90pt}
 
 \maketitle
 \tableofcontents
@@ -74,7 +86,7 @@
 \section{Conclusion}
 \input{8_conclusion}
 
-\newpage
-\bibliography{refs.bib}
+\nocite{*}
+%\bibliography{refs.bib}
 
 \end{document}
