@@ -1,5 +1,4 @@
-use crate::analyzer::CoreStats;
-use crate::core::Core;
+use crate::core::{Core, CoreStats};
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
 use crate::{analyzer::Analyzable, bus::Bus};

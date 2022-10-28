@@ -7,6 +7,14 @@ use std::collections::VecDeque;
 
 const PLACEHOLDER_TAG: u32 = 0;
 
+#[derive(Default, Clone, Debug)]
+pub struct CacheStats {
+    pub num_data_cache_misses: usize,
+    pub num_data_cache_hits: isize,
+    pub num_private_data_access: usize,
+    pub num_shared_data_access: usize,
+}
+
 pub struct Cache {
     core_id: usize,
     cache: Vec<Vec<u32>>,
@@ -20,14 +28,6 @@ pub struct Cache {
     // Queue of waiting instructions (address, action)
     scheduled_instructions: VecDeque<(u32, ProcessorAction)>,
     stats: CacheStats,
-}
-
-#[derive(Default)]
-struct CacheStats {
-    pub num_data_cache_misses: usize,
-    pub num_data_cache_hits: usize,
-    pub num_private_data_access: usize,
-    pub num_shared_data_access: usize,
 }
 
 impl Cache {
@@ -276,10 +276,13 @@ impl Cache {
                 self.core_id, addr
             );
 
+            self.stats.num_data_cache_hits -= 1;
             self.scheduled_instructions
                 .push_front((addr, ProcessorAction::Read));
             return false;
         }
+
+        self.stats.num_data_cache_hits += 1;
         #[cfg(verbose)]
         println!(
             "({:?}) Store addr {:#x} is cached, continuing store.",
@@ -429,9 +432,14 @@ impl Lru {
 impl Analyzable for Cache {
     fn report(&self, stats: &mut crate::analyzer::Stats) {
         let c_stats = &mut stats.cores[self.core_id];
-        c_stats.num_data_cache_hits = self.stats.num_data_cache_hits;
-        c_stats.num_data_cache_misses = self.stats.num_data_cache_misses;
-        stats.num_private_data_access += self.stats.num_private_data_access;
-        stats.num_shared_data_access += self.stats.num_shared_data_access;
+        c_stats.cache.num_data_cache_hits = self.stats.num_data_cache_hits;
+        c_stats.cache.num_data_cache_misses = self.stats.num_data_cache_misses;
+        c_stats.cache.num_private_data_access = self.stats.num_private_data_access;
+        c_stats.cache.num_shared_data_access = self.stats.num_shared_data_access;
+
+        stats.cache.num_data_cache_hits += self.stats.num_data_cache_hits;
+        stats.cache.num_data_cache_misses += self.stats.num_data_cache_misses;
+        stats.cache.num_private_data_access += self.stats.num_private_data_access;
+        stats.cache.num_shared_data_access += self.stats.num_shared_data_access;
     }
 }

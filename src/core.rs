@@ -1,10 +1,23 @@
 use crate::analyzer::Analyzable;
 use crate::bus::Bus;
-use crate::cache::Cache;
+use crate::cache::{Cache, CacheStats};
 use crate::protocol::ProtocolKind;
 use crate::record::{Label, RecordStream};
 use crate::utils::Counter;
 use indicatif::*;
+
+#[derive(Default, Clone, Debug)]
+pub struct CoreStats {
+    pub file_name: String,
+    pub exec_cycles: usize,
+    pub compute_cycles: usize,
+    pub mem_ops: usize,
+    pub idle_cycles: usize,
+    pub num_instructions: usize,
+    pub load_instructions: usize,
+    pub store_instructions: usize,
+    pub cache: CacheStats,
+}
 
 pub struct Core {
     cache: Cache,
@@ -13,15 +26,6 @@ pub struct Core {
     id: usize,
     progress_bar: ProgressBar,
     stats: CoreStats,
-}
-
-#[derive(Default)]
-struct CoreStats {
-    pub file_name: String,
-    pub exec_cycles: usize,
-    pub compute_cycles: usize,
-    pub mem_ops: usize,
-    pub idle_cycles: usize,
 }
 
 impl Core {
@@ -77,9 +81,18 @@ impl Core {
                 self.id, record.label, record.value
             );
             match record.label {
-                Label::Load | Label::Store => self.stats.mem_ops += 1,
+                Label::Load => {
+                    self.stats.mem_ops += 1;
+                    self.stats.load_instructions += 1
+                }
+                Label::Store => {
+                    self.stats.mem_ops += 1;
+                    self.stats.store_instructions += 1
+                }
                 Label::Other => self.stats.compute_cycles += record.value as usize,
             };
+
+            self.stats.num_instructions += 1;
 
             self.progress_bar.inc(1);
 
@@ -122,6 +135,10 @@ impl Analyzable for Core {
         c_stats.compute_cycles = self.stats.compute_cycles;
         c_stats.mem_ops = self.stats.mem_ops;
         c_stats.idle_cycles = self.stats.idle_cycles;
+
+        c_stats.num_instructions = self.stats.num_instructions;
+        c_stats.load_instructions = self.stats.load_instructions;
+        c_stats.store_instructions = self.stats.store_instructions;
 
         self.cache.report(stats);
     }

@@ -88,10 +88,10 @@ fn read_miss() {
     assert_eq!(analyzer.stats.exec_cycles, 102);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 1);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 1);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 1);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 1);
 }
 
 #[test]
@@ -109,10 +109,10 @@ fn read_hit() {
     assert_eq!(analyzer.stats.exec_cycles, 103);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 2);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 1);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 1);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 2);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 1);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 1);
 }
 
 #[test]
@@ -130,10 +130,10 @@ fn write_miss() {
     assert_eq!(analyzer.stats.exec_cycles, 104);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 1);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 1);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 1);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 1);
 }
 
 #[test]
@@ -151,10 +151,10 @@ fn write_hit() {
     assert_eq!(analyzer.stats.exec_cycles, 105);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 1);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 1);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 1);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 1);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 1);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 1);
 }
 
 #[test]
@@ -172,10 +172,10 @@ fn evict() {
     assert_eq!(analyzer.stats.exec_cycles, 304);
     assert_eq!(analyzer.stats.bus_traffic, 12);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 3);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 3);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 3);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 3);
 }
 
 #[test]
@@ -196,10 +196,10 @@ fn sequence_16_1_4() {
     );
     assert_eq!(analyzer.stats.bus_traffic, 4 * 11);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 8);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 1);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 8);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 8);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 1);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 8);
 }
 
 #[test]
@@ -220,10 +220,10 @@ fn sequence_16_2_4() {
     );
     assert_eq!(analyzer.stats.bus_traffic, 4 * 9);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 8);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 1);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 7);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 8);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 2);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 7);
 }
 
 #[test]
@@ -244,8 +244,8 @@ fn sequence_16_4_4() {
     );
     assert_eq!(analyzer.stats.bus_traffic, 4 * 6);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.num_private_data_access, 6);
-    assert_eq!(analyzer.stats.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_hits, 1);
-    assert_eq!(analyzer.stats.cores[0].num_data_cache_misses, 5);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 6);
+    assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 4);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 5);
 }
