@@ -54,7 +54,7 @@
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
     \put(0.07750307,0.13088144){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Zip Archive\end{tabular}}}}%
-    \put(0.32412113,0.24301217){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Parser\end{tabular}}}}%
+    \put(0.32191626,0.24301217){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Loader\end{tabular}}}}%
     \put(0.33286126,0.19702918){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}File 1\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{overview.pdf}}%
     \put(0.75337702,0.24063479){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}System\end{tabular}}}}%

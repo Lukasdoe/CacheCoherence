@@ -1,4 +1,7 @@
 
+\subsection{Components}
+Figure \ref{fig:overview} shows an overview of how the different components in the simulation are structured. We can see that a loader component unpacks a zip archive and passes each file as a record stream to a corresponding core in the system. Each core has one cache each and is connnected to the bus.
+
 \begin{figure}[ht]
     \centering
     \incfig{overview}
@@ -7,16 +10,56 @@
 \end{figure}
 
 
-\subsection{Components}
+
+\subsubsection{Record}
+
+A record consists of a label and a value. 
+During the initialization of the simulation, a loader unpacks the passed zip archive and converts each file contained in the zip archive to a record stream.
+Given the following line in one such unpacked file
+\begin{lstlisting}
+0 0x817ae8
+\end{lstlisting}
+a record will be created in the following form
+\begin{lstlisting}
+Record {
+    label: Label::Load,
+    value: 0x817ae8
+}
+\end{lstlisting}
 
 
 \subsubsection{System}
+The system keeps the state of all the cores and make sure that each core is updated.
+The system will create as many cores as needed to satisfy each file unpacked from the zip archive.
+The update step for each core consists of three stages: \texttt{step}, \texttt{snoop} and \texttt{after\_snoop}.
+The \texttt{step} stage parses the new instruction into a record and updates the state given the record.
+The \texttt{snoop} stage will snoop the bus.
+If the bus currently have an active task and the task's issuer is not the core that is snooping the core may update its state given the active task and current state for that cache line.
+The \texttt{after\_snoop} stage is a cleanup stage done after the snooping stage.
+It consists of changing the state of a cache line depending on the outcome of the snoop stage, that is, if it turns out that the cache line should be shared. 
 
 \subsubsection{Core}
+The core keeps the state of the cache and all the records.
 
 \subsubsection{Cache}
+The cache keeps the state of each cache line, the corresponding LRU value for each cache line, which protocol is in use, the scheduled instructions as well as the address layout of the cache.
+When the cache is initialized in each core the address layout is calculated and consists of the offset length, the index length, the tag length, the set size and the block size.
+The cache lines and LRU are both represented as a two dimensional vector containing an unsigned integer, where the rows represent the sets and the columns represent the blocks.
+Note that there is no need to index the words directly as we load the whole block each time we access a word within the block.
+The scheduled instructions are stored as a deque containing a tuple, the address and the action.
+There are two valid actions a scheduled instruction can have, read and write.
+Read operations are inserted at the front of the deque, while the write operations are inserted at the back of the deque.
+Since the deque is processed from front to back, higher priority will be given to the read operations rather than the write operations.
+
+The cache is updated at every step the core is updated.
+During an update the cache first checks if there is an active task on the bus that does not belong to the core that is updating.
+If that is not the case, the cache will return immediately, stalling the cache as the cache has to wait for its last task to finish.
+Otherwise the cache will pop the front of the deque and try to do either an internal load or internal store depending on the action of the popped instruction.
+An internal load will serach for the given address to see if it is already present in the cache, a hit.
 
 \subsubsection{Bus}
+
+\subsubsection{Protocol}
 
 \subsection{Protocol}
 
