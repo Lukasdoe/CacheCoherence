@@ -94,6 +94,7 @@ Each bus action state contains an address and the number of bytes used for the b
 Each update cycle the bus proceeds to advance the bus transaction if there is one.
 
 \subsubsection{Protocol}
+\label{sec:sub_protocol}
 The protocol is implemented as a trait, where a trait defines shared behaviour.
 This is very similar to how interfaces work in other languages than Rust, with some minor differences.
 For example, traits cannot have fields.
@@ -123,16 +124,31 @@ protocol.snoop(...)
 This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behaviour for the invoked operation.
 
 
-
 \subsection{Protocol}
+Like described in section \ref{sec:sub_protocol}, each protocol needs to implement a set of method to satisfy the trait.
+The following two sub sections will go in depth how the MESI protocol and Dragon protocol implements these, as well as show the state diagrams that come up.
 
 \subsubsection{MESI}
 
 \begin{figure}[ht]
     \centering
     \incfig{mesi}
-    \caption{mesi}
+    \caption{Mesi}
     \label{fig:mesi}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \incfig{mesi_snoop}
+    \caption{Mesi snoop}
+    \label{fig:mesi_snoop}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \incfig{mesi_after_snoop}
+    \caption{Mesi after snoop}
+    \label{fig:mesi_after_snoop}
 \end{figure}
 
 \subsubsection{Dragon}
