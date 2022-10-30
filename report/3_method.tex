@@ -55,11 +55,74 @@ The cache is updated at every step the core is updated.
 During an update the cache first checks if there is an active task on the bus that does not belong to the core that is updating.
 If that is not the case, the cache will return immediately, stalling the cache as the cache has to wait for its last task to finish.
 Otherwise the cache will pop the front of the deque and try to do either an internal load or internal store depending on the action of the popped instruction.
-An internal load will serach for the given address to see if it is already present in the cache, a hit.
+An internal load will search for the given address to see if it is already present in the cache, a hit, and perform the neccesary steps to update the state for the cache line depending on which protocol which is in use.
+If there is not cache hit, the cache will check if a writeback is needed given the current value on the cache line.
+An internal store will also search for the given address to see if it present in the cache, but will in the case of a cache miss push a read action to the deque to fetch the current address before writing to it --- write-allocate policy.
+Both the internal load and internal store will put the needed action on the bus if the bus is not occupied and it is required by the state transition.
+
 
 \subsubsection{Bus}
 
+The bus keeps track of the current task on the bus. There can only be one such task at one time. A task has the following form:
+
+\begin{lstlisting}
+Task {
+    issuer_id: usize,
+    remaining_cycles: usize,
+    action: BusAction,
+}
+\end{lstlisting}
+
+Thus, the task contains the id of the core that issued the task, the remaining clock cycles until the task is finished and the type of bus action.
+There are a couple of bus actions which are shared between both protocols.
+That is, a bus action like \texttt{BusUpdShared} is only valid for the Dragon protocol, so when the MESI protocol is used, this action is ignored.
+The bus actions are represented in the following form:
+
+\begin{lstlisting}
+BusAction {
+    BusRdMem(address, n_bytes),
+    BusRdShared(address, n_bytes),
+    BusRdXMem(address, n_bytes),
+    BusRdXShared(address, n_bytes),
+    BusUpdMem(address, n_bytes),
+    BusUpdShared(address, n_bytes),
+    Flush(address, n_bytes),
+}
+\end{lstlisting}
+
+Each bus action state contains an address and the number of bytes used for the bus exchange.
+Each update cycle the bus proceeds to advance the bus transaction if there is one.
+
 \subsubsection{Protocol}
+The protocol is implemented as a trait, where a trait defines shared behaviour.
+This is very similar to how interfaces work in other languages than Rust, with some minor differences.
+For example, traits cannot have fields.
+The shared behaviour for protocol trait is defined like:
+
+\begin{lstlisting}
+read()
+write()
+snoop()
+after_snoop()
+writeback_required()
+invalidate()
+is_shared()
+\end{lstlisting}
+These operations are required for the implementation of the MESI protocol and the Dragon protocol.
+As briefly described earlier in the cache section, the cache keeps track of the current protocol in use.
+When the cache is doing operations on specific cache lines, it invokes the proper method for the underlying protocol as defined in the trait.
+Thus, the protocol is stored like
+\begin{lstlisting}
+protocol: Box<dyn Protocol>
+\end{lstlisting}
+and operations are for example invoked like
+\begin{lstlisting}
+protocol.snoop(...)
+\end{lstlisting}
+
+This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behaviour for the invoked operation.
+
+
 
 \subsection{Protocol}
 
