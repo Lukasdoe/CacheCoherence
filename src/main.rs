@@ -15,15 +15,15 @@ struct ProgramArgs {
     input_file: String,
 
     /// Cache size in bytes
-    #[clap(value_parser)]
+    #[clap(value_parser, default_value_t = 4096)]
     cache_size: usize,
 
     /// Cache associativity
-    #[clap(value_parser)]
+    #[clap(value_parser, default_value_t = 2)]
     associativity: usize,
 
     /// Cache block size in bytes
-    #[clap(value_parser)]
+    #[clap(value_parser, default_value_t = 32)]
     block_size: usize,
 
     /// Disable progress display
@@ -45,6 +45,12 @@ fn check_args(args: &ProgramArgs) {
     }
     if !power_of_two(args.block_size) {
         panic!("Block size must be a power of 2.");
+    }
+    if (args.cache_size / args.associativity) < args.block_size {
+        panic!("Each cache set should be big enough to at least hold one block. (CacheSize / Associativity) < BlockSize");
+    }
+    if (args.cache_size / args.associativity) % args.block_size != 0 {
+        panic!("Cache set size has to be multiple of the block size. (CacheSize / Associativity) mod BlockSize != 0");
     }
 }
 
