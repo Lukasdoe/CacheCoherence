@@ -1,15 +1,84 @@
 \section{Introduction}
 
+%This report will shed some lights on how cache coherence 
+This report provides the details of how a cache coherence simulator is implemented and shows how three different benchmark traces compare against each other given a certain configuration of the simulator.
+A cache simulator will try to mimic the behaviour of how a real cache would act when presented with a program.
+However, there is no need to execute a certain program every time the cache simulator is run.
+Rather, storing the traces of which memory instructions were used in which order would be enough and will reduce the execution time significantly. 
+A cache coherence simulator is not only concerned with simulating the behaviour of a cache, but also the interaction between different caches when there is a coherence protocol in place.
+A coherence protocol is a protocol that states how two different caches in a shared system accesses shared data. Specifically, two caches must never see different values for the same shared data.
+Two cache coherence protocols will be used in the implementation described in this report: MESI and Dragon.
+The offer a different take on how to deal with shared data and both has their advantages and disadvantages.
+The benchmarks are from the PARSEC suite and are the following:
+\begin{enumerate}
+    \item \textbf{blackscholes}. Option pricing with Blach-Scholes Partial Differnetial Equation.
+    \item \textbf{bodytrack}. Body tracking of a person.
+    \item \textbf{fluidanimate}. Fluid dynamics for animation purposes with Smoothed Particle Hydrodynamics (SPH) method.
+\end{enumerate}
+The trace of each benchmark contains has the form shown in Listing \ref{lst:trace}
+
+\begin{lstlisting}[label=lst:trace]
+<Label> <Address>
+...
+<Label> <Address>
+\end{lstlisting}
+A label can have the values 0 (load), 1 (store) and 2 (other). The load and store are memory operations and will require the cache.
+The other instruction is all other kinds of operations.
+In this simulator, such instructions will be interpreted as a stall in each core for the value specified in the address field.
+Each benchmark contains traces for four different caches.
+This, there will be a different sequence of instructions in the form of Listing \ref{lst:trace} for every cache. 
+As the simulator is concerned about simulating the behaviour of each cache with respect to some cache coherence protocol, actual data is unnecessary.
+The cache is only concerned what slots the data would have occupied, hence only the address field for each trace.
+
+
+The implementation should result in an executable called \texttt{coherence} with a couple of input parameters. Listing \ref{lst:program} shows how to execute the binary
+\begin{lstlisting}[label=lst:program]
+coherence <PROTOCOL> <INPUT_FILE> <CACHE_SIZE> <ASSOCIATIVITY> <BLOCK_SIZE>
+\end{lstlisting}
+The cache size and block size are specified in bytes.
+The default configuration is shown in Listing \ref{lst:default}.
+\begin{lstlisting}[label=lst:default]
+coherence <PROTOCOL> <INPUT_FILE> 4048 2 32 
+\end{lstlisting}
+The traces are rather long and may take a couple of minutes to run.
+We have access to a server that can assist us in running the benchmarks.
+However, while each simulation taking quite some time we will start with running the default configuration for each trace and protocol.
+Whichever configuration has the best performance will be our baseline where we will try to optimize the parameter settings of the cache size, associativity and the block size.
+
+In addition to measuring the performance of the different traces with respect to MESI and Dragon, an improved version of the Dragon protocol will also be used in the benchmarks. 
+The improved version will optimize a certain aspect of the Dragon protocol with the hopes that the execution time will be faster.
+The improved version of the Dragon protocol is described in Section \ref{sec:advanced_task}.
+This is an advanced task beyond the scope of getting the cache coherence simulator in place.
+
+To be able to measure the performance, the following statistic should be the output of the program
+\begin{enumerate}
+    \item Overall execution cycles
+    \item Distribtion of private data accesses and shared data accesses.
+    \item For each core
+    \begin{enumerate}
+        \item Number of cycles spent processing other instructions.
+        \item Number of load and store instructions.
+        \item Number of idle cycles, that is, cycles the core has to wait in order for the cache to complete its operations.
+        \item Cache miss rate
+    \end{enumerate}
+    \item For the bus
+    \begin{enumerate}
+        \item Amount of data traffic in bytes.
+        \item Number of invalidations or updates
+    \end{enumerate}
+\end{enumerate}
+
+
 
 \subsection{Assumptions}
 
+There are a couple of assumptions that need to be made about the behaivour of the simulator. There are a couple of assumptions clearly stated in the project description and we have further expanded the list of assumptions along the way. The core assumptions stated in the projcet description are the following:
 
-TODO: Make cleaner
 \begin{enumerate}
-    \item Memory address is 32-bit. Note that the address shown in the example trace file is 24 bits
-          because the 8 most significant bits are sometimes 0. So the address 0x817b08 is actually 0x00817b08
-    \item Each memory reference accesses 32-bit (4-bytes) of data. That is word size is 4- bytes.
-    \item We are only interested in the data cache and will not model the instruction cache.
+    \item Memory address is 32-bit. 
+    \item The word size is 4 bytes.
+    \item A memory reference accesses 32-bit (1 word) of data.
+    \item Only the data cache will be modeled.
     \item Each processor has its own L1 data cache.
     \item L1 data cache uses write-back, write-allocate policy and LRU replacement policy.
     \item L1 data caches are kept coherent using cache coherence protocol.
@@ -66,3 +135,11 @@ Further, we have to make some additional assumptions
           (block\_size) is transmitted via the bus. For write-backs, also the full cache line is transmitted.
 \end{enumerate}
 \subsection{Methodology}
+The cache coherence simulator is implemented using Rust.
+Rust is a compiled language with similar performance to that of C and C++.
+The Rust compiler is very strict and induces a certain coding style that once it compiles, one often can be sure of that unexpected behaviour will not happend.
+While it often is harder to get a prototype working, hopefully less time will be spent on debugging rare edge cases.
+
+
+Alongside with the cache coherence simulator, unit tests and integration tests will be conducted to ensure the correct behaviour of the simulator.
+
