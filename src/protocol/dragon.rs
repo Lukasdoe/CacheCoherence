@@ -46,7 +46,6 @@ impl Dragon {
         action: ProcessorAction,
         bus: &mut Bus,
     ) -> Option<BusAction> {
-        debug_assert!(action != ProcessorAction::Write || hit);
         debug_assert!((hit && flat_cache_idx.is_some()) || (!hit && flat_cache_idx.is_none()));
 
         // fills current_state with placeholder if hit == false.
@@ -78,8 +77,10 @@ impl Dragon {
                 DragonState::E,
                 Some(BusAction::BusRdMem(addr, self.block_size)),
             ),
-            // this can not occur:
-            // (_, ProcessorAction::Write, false) => (DragonState::Sm, None),
+            (_, ProcessorAction::Write, false) => (
+                DragonState::M,
+                Some(BusAction::BusRdMem(addr, self.block_size)),
+            ),
             _ => panic!(
                 "({:?}) Unresolved processor event: {:?}",
                 self.core_id,

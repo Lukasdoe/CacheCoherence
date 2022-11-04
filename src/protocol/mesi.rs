@@ -48,8 +48,6 @@ impl Mesi {
         action: ProcessorAction,
         bus: &mut Bus,
     ) -> Option<BusAction> {
-        // assert write-allocate cache
-        assert!(action != ProcessorAction::Write || hit);
         let (current_state, current_tag) = &self.cache_state[flat_cache_idx.unwrap_or_default()];
         assert!(!hit || *current_tag == self.addr_layout.tag(addr));
         let (next_state, bus_transaction) = match (current_state, &action, hit) {
@@ -78,10 +76,9 @@ impl Mesi {
                 MesiState::E,
                 Some(BusAction::BusRdMem(addr, self.block_size)),
             ),
-            _ => panic!(
-                "({:?}) Unresolved processor event: {:?}",
-                self.core_id,
-                (current_state, action, hit)
+            (_, ProcessorAction::Write, false) => (
+                MesiState::M,
+                Some(BusAction::BusRdXMem(addr, self.block_size)),
             ),
         };
         #[cfg(verbose)]

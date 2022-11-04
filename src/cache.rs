@@ -152,14 +152,8 @@ impl Cache {
         }
     }
 
-    /// Returns true if the operation could be completed / scheduled
-    fn internal_load(&mut self, addr: u32, bus: &mut Bus) -> bool {
-        #[cfg(verbose)]
-        println!(
-            "({:?}) Load of addr {:#x} requested (cache).",
-            self.core_id, addr
-        );
-
+    /// Returns true if the access operation could be completed / scheduled
+    fn access(&mut self, addr: u32, bus: &mut Bus, access_type: ProcessorAction) -> bool {
         let store_idx = self.search(addr);
         let (evict_set, evict_block) = self.get_evict_index(addr);
         let evict_tag = self.cache[evict_set][evict_block];
@@ -168,7 +162,6 @@ impl Cache {
         let flat_evict_idx = self.addr_layout.nested_to_flat(evict_set, evict_block);
 
         if store_idx != None {
-            // TODO: is a hit on an invalid cache line also a hit?
             #[cfg(verbose)]
             println!("({:?}) Hit.", self.core_id);
         } else {
@@ -207,19 +200,28 @@ impl Cache {
             }
         }
         // --- after this point, the optional write-back is already done => load new value!
-        let bus_action = self.protocol.read(
-            addr,
-            flat_store_idx,
-            flat_evict_idx,
-            store_idx.is_some(),
-            bus,
-        );
+        let bus_action = match access_type {
+            ProcessorAction::Read => self.protocol.read(
+                addr,
+                flat_store_idx,
+                flat_evict_idx,
+                store_idx.is_some(),
+                bus,
+            ),
+            ProcessorAction::Write => self.protocol.write(
+                addr,
+                flat_store_idx,
+                flat_evict_idx,
+                store_idx.is_some(),
+                bus,
+            ),
+        };
 
         if let Some(action) = bus_action {
             if bus.occupied() {
                 #[cfg(verbose)]
                 println!(
-                    "({:?}) Cache load required the bus ({:?}), which is busy.",
+                    "({:?}) Cache access required the bus ({:?}), which is busy.",
                     self.core_id, action
                 );
 
@@ -227,7 +229,7 @@ impl Cache {
             }
             #[cfg(verbose)]
             println!(
-                "({:?}) Cache load executed bus transaction {:?}",
+                "({:?}) Cache access executed bus transaction {:?}",
                 self.core_id, action
             );
             bus.put_on(self.core_id, action);
@@ -253,10 +255,20 @@ impl Cache {
 
         #[cfg(verbose)]
         println!(
-            "({:?}) Cache load of addr {:#x} successfully completed.",
+            "({:?}) Cache access of addr {:#x} successfully completed.",
             self.core_id, addr
         );
         true
+    }
+
+    /// Returns true if the operation could be completed / scheduled
+    fn internal_load(&mut self, addr: u32, bus: &mut Bus) -> bool {
+        #[cfg(verbose)]
+        println!(
+            "({:?}) Load of addr {:#x} requested (cache).",
+            self.core_id, addr
+        );
+        self.access(addr, bus, ProcessorAction::Read)
     }
 
     /// Returns true if the operation could be completed / scheduled
@@ -266,56 +278,7 @@ impl Cache {
             "({:?}) Store to addr {:#x} requested (cache).",
             self.core_id, addr
         );
-
-        // write-alloc cache => test if addr is cached
-        let cache_idx_opt = self.search(addr);
-        if cache_idx_opt.is_none() {
-            #[cfg(verbose)]
-            println!(
-                "({:?}) Store addr {:#x} is not cached, scheduling read for next cycle.",
-                self.core_id, addr
-            );
-
-            self.stats.num_data_cache_hits -= 1;
-            self.scheduled_instructions
-                .push_front((addr, ProcessorAction::Read));
-            return false;
-        }
-
-        self.stats.num_data_cache_hits += 1;
-        #[cfg(verbose)]
-        println!(
-            "({:?}) Store addr {:#x} is cached, continuing store.",
-            self.core_id, addr
-        );
-        let cache_idx = cache_idx_opt.unwrap();
-        let flat_cache_idx = self.addr_layout.nested_to_flat(cache_idx.0, cache_idx.1);
-        let bus_action = self
-            .protocol
-            .write(addr, Some(flat_cache_idx), flat_cache_idx, true, bus);
-
-        if let Some(action) = bus_action {
-            if bus.occupied() {
-                #[cfg(verbose)]
-                println!(
-                    "({:?}) Cache store required the bus ({:?}), which is busy.",
-                    self.core_id, action
-                );
-                return false;
-            }
-            #[cfg(verbose)]
-            println!(
-                "({:?}) Cache store executed bus transaction {:?}",
-                self.core_id, action
-            );
-            bus.put_on(self.core_id, action);
-        }
-        #[cfg(verbose)]
-        println!(
-            "({:?}) Cache store of addr {:#x} successfully completed.",
-            self.core_id, addr
-        );
-        true
+        self.access(addr, bus, ProcessorAction::Write)
     }
 
     fn search_cache_set(&self, addr: u32, cache_set: &[u32]) -> Option<usize> {
