@@ -20,11 +20,11 @@ to the bus.
 A record consists of a label and a value.  During the initialization of the simulation, a loader
 unpacks the passed zip archive and converts each file contained in the zip archive to a record
 stream.  Given the following line in one such unpacked file
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 0 0x817ae8
 \end{lstlisting}
 a record will be created in the following form
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 Record {
     label: Label::Load,
     value: 0x817ae8
@@ -81,7 +81,7 @@ by the state transition.
 The bus keeps track of the current task on the bus. There can only be one such task at one time. A
 task has the following form:
 
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 Task {
     issuer_id: usize,
     remaining_cycles: usize,
@@ -95,7 +95,7 @@ between both protocols.  That is, a bus action like \texttt{BusUpdShared} is onl
 Dragon protocol, so when the MESI protocol is used, this action is ignored.  The bus actions are
 represented in the following form:
 
-\begin{lstlisting}[float,floatplacement=H][float,floatplacement=H]
+\begin{lstlisting}
 BusAction {
     BusRdMem(address, n_bytes),
     BusRdShared(address, n_bytes),
@@ -116,7 +116,7 @@ The protocol is implemented as a trait, where a trait defines shared behaviour. 
 similar to how interfaces work in other languages than Rust, with some minor differences.  For
 example, traits cannot have fields.  The shared behaviour for protocol trait is defined like:
 
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 read()
 write()
 snoop()
@@ -129,11 +129,11 @@ These operations are required for the implementation of the MESI protocol and th
 As briefly described earlier in the cache section, the cache keeps track of the current protocol in
 use.  When the cache is doing operations on specific cache lines, it invokes the proper method for
 the underlying protocol as defined in the trait.  Thus, the protocol is stored like
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 protocol: Box<dyn Protocol>
 \end{lstlisting}
 and operations are for example invoked like
-\begin{lstlisting}[float,floatplacement=H]
+\begin{lstlisting}
 protocol.snoop(...)
 \end{lstlisting}
 

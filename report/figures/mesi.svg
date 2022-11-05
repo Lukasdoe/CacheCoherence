@@ -113,9 +113,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.50279478"
-     inkscape:cx="476.33748"
-     inkscape:cy="-12.92774"
+     inkscape:zoom="2.5913795"
+     inkscape:cx="270.12639"
+     inkscape:cy="180.79174"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -204,11 +204,11 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.204195;stroke-opacity:1"
-       x="47.799725"
+       x="62.087234"
        y="222.84932"
        id="text1055-36-8-7"><tspan
          sodipodi:role="line"
-         x="47.799725"
+         x="62.087234"
          y="222.84932"
          id="tspan2959-9-5"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.204195">Write/BusRdXMem</tspan></text>
@@ -226,11 +226,11 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.204195;stroke-opacity:1"
-       x="23.605261"
+       x="39.100266"
        y="233.40375"
        id="text1055-36-8-7-7"><tspan
          sodipodi:role="line"
-         x="23.605261"
+         x="39.100266"
          y="233.40375"
          id="tspan2959-9-5-3"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.204195">Write/BusRdXMem</tspan></text>
@@ -337,22 +337,22 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.204195;stroke-opacity:1"
-       x="53.091396"
+       x="65.791405"
        y="246.15364"
        id="text11680"><tspan
          sodipodi:role="line"
-         x="53.091396"
+         x="65.791405"
          y="246.15364"
          id="tspan11678"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.204195">Read/BusRdMem</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.204195;stroke-opacity:1"
-       x="154.92072"
+       x="151.94872"
        y="223.45064"
        id="text11680-8"><tspan
          sodipodi:role="line"
-         x="154.92072"
+         x="151.94872"
          y="223.45064"
          id="tspan11678-4"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.204195">Read/BusRdMem</tspan></text>
@@ -371,7 +371,7 @@
     <circle
        style="fill:none;stroke:#000000;stroke-width:0.3;stroke-opacity:1"
        id="circle26244"
-       cx="205.40053"
+       cx="189.52574"
        cy="225.04018"
        r="6.3302684" />
     <rect
@@ -379,22 +379,22 @@
        id="rect26246"
        width="32.729774"
        height="88.732506"
-       x="189.6347"
+       x="173.75992"
        y="183.3597" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.204195;stroke-opacity:1"
-       x="192.45638"
+       x="177.63991"
        y="189.60405"
        id="text26260"><tspan
          sodipodi:role="line"
-         x="192.45638"
+         x="177.63991"
          y="189.60405"
          id="tspan26258"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.204195">Cache miss</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.3;stroke-dasharray:none;marker-end:url(#marker26474)"
-       d="M 198.96038,225.39974 H 140.26167"
+       d="m 183.34323,225.39974 -43.08156,0"
        id="path26470"
        sodipodi:nodetypes="cc" />
     <text
@@ -411,11 +411,11 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
-       x="200.42833"
+       x="184.55354"
        y="226.86938"
        id="text1055-6-1"><tspan
          id="tspan302-9"
-         x="200.42833"
+         x="184.55354"
          y="226.86938"
          sodipodi:role="line">Any</tspan></text>
   </g>

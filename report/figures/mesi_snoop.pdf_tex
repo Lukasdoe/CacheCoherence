@@ -56,12 +56,12 @@
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{mesi_snoop.pdf}}%
     \put(0.51753171,0.27341983){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}M\end{tabular}}}}%
-    \put(0.16807631,0.2087129){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
+    \put(0.19012494,0.2087129){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
     \put(0.58549302,0.13544648){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
-    \put(0.2678511,0.15951888){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
+    \put(0.32738234,0.15951888){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
     \put(0.68442904,0.16794294){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdXMem/BusRdShared\end{tabular}}}}%
     \put(0.53825315,0.07995758){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdXMem/BusRdShared\end{tabular}}}}%
-    \put(0.15573694,0.09475129){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdXMem/BusRdShared\end{tabular}}}}%
+    \put(0.1821953,0.09475129){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdXMem/BusRdShared\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{mesi_snoop.pdf}}%
     \put(0.52194141,0.19399325){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}E\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=3]{mesi_snoop.pdf}}%

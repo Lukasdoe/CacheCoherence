@@ -2,26 +2,6 @@
 
 \subsection{Quantitative Analysis}
 
-\begin{figure}[ht]
-    \centering
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \incfig{associativity}
-        \caption{Associativity}
-        \label{fig:associativity}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.45\textwidth}
-        \centering
-        \incfig{cache_size}
-        \caption{Cache size}
-        \label{fig:cache_size}
-    \end{subfigure}
-    \hfill
-    \caption{Placeholder graphs}
-    \label{fig:placeholder}
-\end{figure}
-
 % Benchmarks:
 
 % Numbers are [Cache size, associativity, block_size]
@@ -33,5 +13,115 @@
 %  - 8KiB, 2, 32
 %  - 4KiB, 2, 16
 %  - 4KiB, 2, 64
+
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{cache_size_blackscholes}
+        \caption{Blackscholes.}
+        \label{fig:cache_size_blackscholes}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{cache_size_bodytrack}
+        \caption{Bodytrack.}
+        \label{fig:cache_size_bodytrack}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{cache_size_fluidanimate}
+        \caption{Fluidanimate.}
+        \label{fig:cache_size_fluidanimate}
+    \end{subfigure}
+    \hfill
+    \caption{The graphs show the number of executed cycles when varying the size of the cache. There are three different settings for the cache size, 1024 bytes, 4096 bytes and 8192 bytes. The associativity is 2 and the block size is 32 bytes.}
+    \label{fig:cache_size}
+\end{figure}
+
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{block_size_blackscholes}
+        \caption{Blackscholes.}
+        \label{fig:block_size_blackscholes}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{block_size_bodytrack}
+        \caption{Bodytrack.}
+        \label{fig:block_size_bodytrack}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{block_size_fluidanimate}
+        \caption{Fluidanimate.}
+        \label{fig:block_size_fluidanimate}
+    \end{subfigure}
+    \hfill
+    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}
+    \label{fig:block_size}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{associativity_blackscholes}
+        \caption{Blackscholes.}
+        \label{fig:associativity_blackscholes}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{associativity_bodytrack}
+        \caption{Bodytrack.}
+        \label{fig:associativity_bodytrack}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{associativity_fluidanimate}
+        \caption{Fluidanimate.}
+        \label{fig:associativity_fluidanimate}
+    \end{subfigure}
+    \hfill
+    \caption{The graphs show the number of executed cycles when varying the associativity. There are three different settings for the associativity, 1 (direct mapped), 2 (2-set-associative) and 128 (fully associative). The block size is 32 bytes and the cache size is 4096 bytes.}
+    \label{fig:associativity}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{invalidations}
+        \caption{Invalidations.}
+        \label{fig:invalidations}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{traffic}
+        \caption{Bus traffic.}
+        \label{fig:bus_traffic}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        %\incfig{}
+        \caption{}
+        \label{fig:}
+    \end{subfigure}
+    \hfill
+    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}
+    \label{fig:}
+\end{figure}
 
 \subsection{Advanced Task}\label{results:advanced}

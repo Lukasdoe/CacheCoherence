@@ -4,19 +4,40 @@ import itertools
 import os
 
 
+name = "associativity.csv"
+
 path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath(os.path.join(path, ".."))
 data_path = os.path.join(root_path, "data")
-blackscholes_path = os.path.join(data_path, "blackscholes/blackscholes_10.zip")
-target = os.path.join(root_path, "target/debug/coherence")
-out_path = os.path.join(data_path, "data.csv")
+blackscholes_path = os.path.join(data_path, "blackscholes_four.zip")
+bodytrack_path = os.path.join(data_path, "bodytrack_four.zip")
+fluidanimate_path = os.path.join(data_path, "fluidanimate_four.zip")
+target = os.path.join(root_path, "target/release/coherence")
+out_path = os.path.join(data_path, name)
 
 
-protocols = ["mesi", "dragon"]
-inputs = [blackscholes_path]
-cache_sizes = ["16", "32"]
-associativities = ["1", "2", "4"]
-block_sizes = ["4"]
+protocols = ["mesi", "dragon", "mesi-advanced"]
+inputs = [blackscholes_path, bodytrack_path, fluidanimate_path]
+
+# associativity
+cache_sizes = ["4096"]
+associativities = ["1", "128"]
+block_sizes = ["32"]
+
+# cache size
+# cache_sizes = ["1024", "8192"]
+# associativities = ["2"]
+# block_sizes = ["32"]
+
+# block size
+# cache_sizes = ["4096"]
+# associativities = ["2"]
+# block_sizes = ["16", "64"]
+
+# default
+# cache_sizes = ["4096"]
+# associativities = ["2"]
+# block_sizes = ["32"]
 
 a = [protocols, inputs, cache_sizes, associativities, block_sizes]
 all_options = list(itertools.product(*a))
@@ -34,6 +55,8 @@ columns = [
     "total_hits_percentage",
     "total_misses",
     "total_misses_percentage",
+    "traffic",
+    "invalidations",
     "core0_instructions",
     "core0_exec_cycles",
     "core0_compute_cycles",
@@ -101,10 +124,22 @@ def parse(lines):
             misses = int(lines[i].split()[-2])
             misses_percentage = float(lines[i].split()[-1][1:-1])
             i += 1
-            trafic = int(lines[i].split()[-2])
+            traffic = int(lines[i].split()[-2])
             i += 1
             invalidations = int(lines[i].split()[-1])
-            data.extend([cycles, private_accesses, shared_accesses, hits, hits_percentage, misses, misses_percentage])
+            data.extend(
+                [
+                    cycles,
+                    private_accesses,
+                    shared_accesses,
+                    hits,
+                    hits_percentage,
+                    misses,
+                    misses_percentage,
+                    traffic,
+                    invalidations,
+                ]
+            )
 
         if line.startswith("Core Statistics"):
             cores = "\n".join(lines[i + 1 :]).split("\n\n")
@@ -152,14 +187,21 @@ def parse(lines):
 
 for i, options in enumerate(all_options):
     protocol, input_file, cache_size, associativity, block_size = options
-    input_file = os.path.basename(input_file)
+    input_name = os.path.basename(input_file)
 
     print(f"[{i+1}/{len(all_options)}] {options}")
-    p = subprocess.Popen([target, *options, "--no-progress"], stdout=subprocess.PIPE)
+    if protocol == "mesi-advanced":
+        p = subprocess.Popen(
+            [target, "mesi", input_file, cache_size, associativity, block_size, "--no-progress", "--read-broadcast"],
+            stdout=subprocess.PIPE,
+        )
+    else:
+        p = subprocess.Popen([target, *options, "--no-progress"], stdout=subprocess.PIPE)
+
     out, err = p.communicate()
     lines = out.decode("utf-8").split("\n")
     df_data = pd.DataFrame(
-        [[protocol, input_file, cache_size, associativity, block_size, *parse(lines)]], columns=columns
+        [[protocol, input_name, cache_size, associativity, block_size, *parse(lines)]], columns=columns
     )
     df = pd.concat([df, df_data])
     df.to_csv(out_path, index=False)

@@ -58,9 +58,9 @@
     \put(0.53957253,0.29320564){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}M\end{tabular}}}}%
     \put(0.59270732,0.37022934){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/---\\Write/---\end{tabular}}}}%
     \put(0.46104415,0.25433763){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/---\end{tabular}}}}%
-    \put(0.19916552,0.2297945){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdXMem\end{tabular}}}}%
+    \put(0.25869681,0.2297945){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdXMem\end{tabular}}}}%
     \put(0.09990412,0.36831646){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Cache hit\end{tabular}}}}%
-    \put(0.09835525,0.18581772){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdXMem\end{tabular}}}}%
+    \put(0.16291777,0.18581772){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdXMem\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{mesi.pdf}}%
     \put(0.54398219,0.21377907){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}E\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=3]{mesi.pdf}}%
@@ -72,11 +72,11 @@
     \put(0,0){\includegraphics[width=\unitlength,page=6]{mesi.pdf}}%
     \put(0.60370229,0.18266182){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/---\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=7]{mesi.pdf}}%
-    \put(0.22121415,0.13269316){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/BusRdMem\end{tabular}}}}%
-    \put(0.64550298,0.22728901){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/BusRdMem\end{tabular}}}}%
+    \put(0.27413085,0.13269316){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/BusRdMem\end{tabular}}}}%
+    \put(0.63311965,0.22728901){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/BusRdMem\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=8]{mesi.pdf}}%
-    \put(0.80190156,0.36831646){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Cache miss\end{tabular}}}}%
+    \put(0.74016628,0.36831646){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Cache miss\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=9]{mesi.pdf}}%
-    \put(0.83511804,0.21304423){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Any\end{tabular}}}}%
+    \put(0.7689731,0.21304423){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Any\end{tabular}}}}%
   \end{picture}%
 \endgroup%
