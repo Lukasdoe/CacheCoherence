@@ -31,8 +31,6 @@ Further, we have to make some additional assumptions
               \item Write Hit => 1 cycle delay
               \item Write Miss => 1 + (cache\_miss\_penalty) delay
           \end{enumerate}
-    \item PrWriteMiss does not exist at the protocol level. Every write miss first allocates using a
-          read. Therefore, every PrWriteMiss is translated to PrRdMiss -> Write
     \item A bus update always only transmits a single word, bus flushes always transmit a whole block.
           Flushes always also go to main memory and therefore require at least 100 cycles. Updates can go to
           other caches only, making them faster with about 2 cycles.
@@ -64,5 +62,9 @@ Further, we have to make some additional assumptions
     \item If a valid version of the cache line is in the cache (hit), only single words are updated /
           read / write. If there is not valid version in the cache (miss) or invalid, the full cache line
           (block\_size) is transmitted via the bus. For write-backs, also the full cache line is transmitted.
+    \item A cache hit occurs if the cache contains a block that contains the requested address. It is
+          not affected by the protocol state of the line. This means that accesses to invalidated cache lines
+          are also counted as cache hits.
+
 \end{enumerate}
 \subsection{Methodology}

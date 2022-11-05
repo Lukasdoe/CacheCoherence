@@ -302,4 +302,8 @@ impl Protocol for Dragon {
         debug_assert!(self.cache_state[cache_idx].unwrap().1 == tag);
         self.cache_state[cache_idx] = None
     }
+
+    fn read_broadcast(&mut self, _: &mut Bus) {
+        panic!("Read broadcast optimization cannot be used with dragon protocol.")
+    }
 }

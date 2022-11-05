@@ -59,6 +59,7 @@ fn run(args: ProgramArgs) -> Analyzer {
         args.block_size,
         record_streams,
         !args.no_progress,
+        Default::default(),
     );
 
     loop {

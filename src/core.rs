@@ -124,6 +124,10 @@ impl Core {
     pub fn sanity_check(&self) {
         self.cache.sanity_check();
     }
+
+    pub fn read_broadcast(&mut self, bus: &mut Bus) {
+        self.cache.read_broadcast(bus);
+    }
 }
 
 impl Analyzable for Core {

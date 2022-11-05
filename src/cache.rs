@@ -152,6 +152,10 @@ impl Cache {
         }
     }
 
+    pub fn read_broadcast(&mut self, bus: &mut Bus) {
+        self.protocol.read_broadcast(bus);
+    }
+
     /// Returns true if the access operation could be completed / scheduled
     fn access(&mut self, addr: u32, bus: &mut Bus, access_type: ProcessorAction) -> bool {
         let store_idx = self.search(addr);

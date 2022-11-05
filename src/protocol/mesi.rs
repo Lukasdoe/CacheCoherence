@@ -141,7 +141,7 @@ impl Mesi {
             (BusAction::BusRdXMem(b_addr, c), MesiState::M) => {
                 debug_assert!(b_addr == addr);
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(b_addr, c);
+                task.action = BusAction::BusRdXShared(b_addr, c);
                 task.remaining_cycles = Bus::price(&BusAction::Flush(0, self.block_size));
             }
 
@@ -159,7 +159,7 @@ impl Mesi {
             (BusAction::BusRdXMem(b_addr, c), MesiState::E) => {
                 debug_assert!(b_addr == addr);
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(b_addr, c);
+                task.action = BusAction::BusRdXShared(b_addr, c);
                 task.remaining_cycles = Bus::price(&task.action);
             }
 
@@ -173,11 +173,21 @@ impl Mesi {
 
             // Event: Someone else wants to readX our shared line
             // => S -> I but supply line
-            (BusAction::BusRdXMem(b_addr, c), MesiState::S) => {
+            (
+                BusAction::BusRdXMem(b_addr, c) | BusAction::BusRdXShared(b_addr, c),
+                MesiState::S,
+            ) => {
                 debug_assert!(b_addr == addr);
                 *state = MesiState::I;
-                task.action = BusAction::BusRdShared(b_addr, c);
+                task.action = BusAction::BusRdXShared(b_addr, c);
                 task.remaining_cycles = Bus::price(&task.action);
+            }
+
+            (
+                BusAction::BusRdXShared(_, _) | BusAction::BusRdShared(_, _),
+                MesiState::E | MesiState::M,
+            ) => {
+                panic!("Reached invalid state.");
             }
             // Ignore bus events that don't change anything
             _ => return None,
@@ -210,7 +220,7 @@ impl Mesi {
             None => return,
         };
         // after-snoop only regards actions of other cores on our task
-        if task.issuer_id == self.core_id {
+        if task.issuer_id != self.core_id {
             return;
         }
         let addr = BusAction::extract_addr(task.action);
@@ -296,5 +306,39 @@ impl Protocol for Mesi {
     fn invalidate(&mut self, cache_idx: usize, tag: u32) {
         debug_assert!(self.cache_state[cache_idx].1 == tag);
         self.cache_state[cache_idx] = (MesiState::I, PLACEHOLDER_TAG)
+    }
+
+    fn read_broadcast(&mut self, bus: &mut Bus) {
+        // only run if bus has active task that is not ours and concerns
+        if bus
+            .active_task()
+            .map_or(true, |task| task.issuer_id == self.core_id)
+        {
+            return;
+        }
+
+        // check if we have the task address stored currently
+        let task = bus.active_task().unwrap();
+        assert_ne!(task.issuer_id, self.core_id);
+        let addr = BusAction::extract_addr(task.action);
+        let tag = self.addr_layout.tag(addr);
+        // abort if task tag is not cached => we don't care
+        let (state, stored_tag) = match self.idx_of_addr(addr) {
+            Some(idx) => &mut self.cache_state[idx],
+            None => return,
+        };
+        assert_eq!(*stored_tag, tag, "Inconsistent cache protocol state.");
+
+        // read broadcast optimization
+        if let (BusAction::BusRdMem(b_addr, c) | BusAction::BusRdShared(b_addr, c), MesiState::I) =
+            (task.action, &state)
+        {
+            debug_assert!(b_addr == addr);
+            // only execute if other core is reading complete block
+            if c == self.block_size {
+                *state = MesiState::S;
+                task.action = BusAction::BusRdShared(b_addr, c);
+            }
+        }
     }
 }

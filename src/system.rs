@@ -1,6 +1,7 @@
 use crate::core::{Core, CoreStats};
 use crate::protocol::ProtocolKind;
 use crate::record::RecordStream;
+use crate::Optimizations;
 use crate::{analyzer::Analyzable, bus::Bus};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use rand::{rngs::mock::StepRng, seq::SliceRandom};
@@ -16,6 +17,7 @@ pub struct System {
     progress: ProgressBar,
     mp_bar: MultiProgress,
     rng: rand::rngs::mock::StepRng,
+    optimizations: Optimizations,
 }
 
 impl System {
@@ -26,6 +28,7 @@ impl System {
         block_size: usize,
         record_streams: Vec<RecordStream>,
         show_process: bool,
+        optimizations: Optimizations,
     ) -> Self {
         let mp_bar = MultiProgress::new();
         let system_progress = mp_bar
@@ -61,6 +64,7 @@ impl System {
             progress: system_progress,
             mp_bar,
             rng: StepRng::new(0, 1),
+            optimizations,
         }
     }
 
@@ -93,6 +97,13 @@ impl System {
         // run 2: snoop other cores' actions
         for core in self.cores.iter_mut() {
             core.snoop(&mut self.bus);
+        }
+
+        // run 2.5: read broadcast optimization (if enabled)
+        if self.optimizations.read_broadcast {
+            for core in self.cores.iter_mut() {
+                core.read_broadcast(&mut self.bus);
+            }
         }
 
         // run 3: cleanup after bus snooping

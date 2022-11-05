@@ -54,9 +54,12 @@ pub trait Protocol {
     /// (debugging only) receive the stored tag for the given cache idx (if any)
     #[cfg(sanity_check)]
     fn sanity_check(&self, cache_idx: usize) -> Option<u32>;
+
+    /// Read broadcast optimization
+    fn read_broadcast(&mut self, bus: &mut Bus);
 }
 
-#[derive(Clone, Copy, Debug, ArgEnum)]
+#[derive(Clone, Copy, Debug, ArgEnum, PartialEq, Eq)]
 pub enum ProtocolKind {
     Mesi,
     Dragon,

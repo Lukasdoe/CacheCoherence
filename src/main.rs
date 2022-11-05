@@ -1,4 +1,4 @@
-use cacher::{Analyzer, FileLoader, ProtocolKind, System};
+use cacher::{Analyzer, FileLoader, Optimizations, ProtocolKind, System};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -29,6 +29,10 @@ struct ProgramArgs {
     /// Disable progress display
     #[clap(short, long)]
     no_progress: bool,
+
+    /// Enable the read-broadcasting optimization (MESI only)
+    #[clap(short, long)]
+    read_broadcast: bool,
 }
 
 // taken from https://stackoverflow.com/a/600306
@@ -51,6 +55,9 @@ fn check_args(args: &ProgramArgs) {
     }
     if (args.cache_size / args.associativity) % args.block_size != 0 {
         panic!("Cache set size has to be multiple of the block size. (CacheSize / Associativity) mod BlockSize != 0");
+    }
+    if args.read_broadcast && args.protocol != ProtocolKind::Mesi {
+        panic!("Read broadcast optimization is only possible with the MESI protocol.");
     }
 }
 
@@ -76,6 +83,9 @@ fn main() {
         args.block_size,
         record_streams,
         !args.no_progress,
+        Optimizations {
+            read_broadcast: args.read_broadcast,
+        },
     );
 
     loop {
