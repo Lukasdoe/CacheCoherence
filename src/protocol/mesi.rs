@@ -342,3 +342,374 @@ impl Protocol for Mesi {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const CACHE_SIZE: usize = 16;
+    const BLOCK_SIZE: usize = 4;
+    const ASSOCIATIVITY: usize = 1;
+
+    fn addr_layout(cache_size: usize, block_size: usize, associativity: usize) -> AddressLayout {
+        let set_size = associativity * block_size;
+        let num_sets = cache_size / set_size;
+
+        // as integer logs are currently unstable, we have to be ugly
+        let offset_length = ((block_size / 4) as f64).log2() as usize;
+        let index_length = (num_sets as f64).log2() as usize;
+        let tag_length = 32 - (offset_length + index_length);
+
+        AddressLayout::new(
+            offset_length,
+            index_length,
+            tag_length,
+            set_size,
+            block_size,
+        )
+    }
+
+    #[test]
+    fn invalid_to_shared_to_shared_to_modified() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.read(addr, None, store_idx, false, &mut bus);
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+        assert!(action.is_some());
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let mut other_protocol = Mesi::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = other_protocol.read(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(1, action);
+        }
+
+        let task = protocol.snoop(&mut bus);
+
+        assert!(task.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::S, layout.tag(addr))
+        );
+
+        other_protocol.after_snoop(&mut bus);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::S, layout.tag(addr))
+        );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let action = other_protocol.read(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_none());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::S, layout.tag(addr))
+        );
+
+        let action = protocol.write(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(0, action);
+        }
+
+        let task = other_protocol.snoop(&mut bus);
+        assert!(task.is_some());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::I, layout.tag(addr))
+        );
+    }
+
+    #[test]
+    fn invalid_to_modified_to_modified() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        let action = protocol.write(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_none());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        let action = protocol.read(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_none());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+    }
+
+    #[test]
+    fn invalid_to_exclusive_to_exclusive_to_modified() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.read(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let action = protocol.read(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_none());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+
+        let action = protocol.write(addr, Some(store_idx), store_idx, true, &mut bus);
+        assert!(action.is_none());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+    }
+
+    #[test]
+    fn modified_to_shared() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let mut other_protocol = Mesi::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = other_protocol.read(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(1, action);
+        }
+
+        let task = protocol.snoop(&mut bus);
+
+        assert!(task.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::S, layout.tag(addr))
+        );
+
+        other_protocol.after_snoop(&mut bus);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::S, layout.tag(addr))
+        );
+    }
+
+    #[test]
+    fn exclusive_to_invalid() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.read(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::E, layout.tag(addr))
+        );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let mut other_protocol = Mesi::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = other_protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(1, action);
+        }
+
+        let task = protocol.snoop(&mut bus);
+
+        assert!(task.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, layout.tag(addr))
+        );
+
+        other_protocol.after_snoop(&mut bus);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+    }
+
+    #[test]
+    fn modified_to_invalid() {
+        let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
+        let mut protocol = Mesi::new(0, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+        let mut bus = Bus::new();
+
+        let addr = 0x100;
+        let set_idx = layout.index(addr);
+        let block_idx = 0;
+        let store_idx = layout.nested_to_flat(set_idx, block_idx);
+
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let mut other_protocol = Mesi::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::I, 0)
+        );
+        let action = other_protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(1, action);
+        }
+
+        let task = protocol.snoop(&mut bus);
+
+        assert!(task.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx],
+            (MesiState::I, layout.tag(addr))
+        );
+
+        other_protocol.after_snoop(&mut bus);
+
+        assert_eq!(
+            other_protocol.cache_state[store_idx],
+            (MesiState::M, layout.tag(addr))
+        );
+    }
+}
