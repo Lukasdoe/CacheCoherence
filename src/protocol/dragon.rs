@@ -171,7 +171,9 @@ impl Dragon {
             // => pass
 
             // Event: Bus Read && Line is M
-            // => pass
+            (BusAction::BusRdMem(_, _) | BusAction::BusRdShared(_, _), DragonState::M) => {
+                *state = (DragonState::Sm, tag)
+            }
 
             // Event: Bus Update && Line is Sm
             // => Sm -> Sc
@@ -308,7 +310,6 @@ impl Protocol for Dragon {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -335,7 +336,6 @@ mod tests {
         )
     }
 
-
     #[test]
     fn invalid_to_exclusive_to_exclusive_to_modified() {
         let layout = addr_layout(CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY);
@@ -347,10 +347,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -384,10 +381,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.write(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -421,10 +415,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -434,10 +425,7 @@ mod tests {
 
         let mut other_protocol = Dragon::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
 
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
         let action = other_protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -490,10 +478,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -503,10 +488,7 @@ mod tests {
 
         let mut other_protocol = Dragon::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
 
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
         let action = other_protocol.write(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -590,10 +572,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.write(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -603,10 +582,7 @@ mod tests {
 
         let mut other_protocol = Dragon::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
 
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
         let action = other_protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -647,10 +623,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -660,10 +633,7 @@ mod tests {
 
         let mut other_protocol = Dragon::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
 
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
         let action = other_protocol.write(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -711,10 +681,7 @@ mod tests {
         let task = protocol.snoop(&mut bus);
 
         assert!(task.is_none());
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
 
         other_protocol.after_snoop(&mut bus);
 
@@ -735,10 +702,7 @@ mod tests {
         let block_idx = 0;
         let store_idx = layout.nested_to_flat(set_idx, block_idx);
 
-        assert_eq!(
-            protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.read(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -748,10 +712,7 @@ mod tests {
 
         let mut other_protocol = Dragon::new(1, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
 
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
         let action = other_protocol.write(addr, None, store_idx, false, &mut bus);
         assert!(action.is_some());
         assert_eq!(
@@ -799,10 +760,7 @@ mod tests {
         let task = other_protocol.snoop(&mut bus);
 
         assert!(task.is_none());
-        assert_eq!(
-            other_protocol.cache_state[store_idx],
-            None
-        );
+        assert_eq!(other_protocol.cache_state[store_idx], None);
 
         protocol.after_snoop(&mut bus);
 
