@@ -157,7 +157,7 @@ Dragon protocol implements these, as well as show the state diagrams that come u
 A transition diagram for our implementation of the processor initiated transitions for the MESI protocol can be found in Figure \ref{fig:mesi}.
 However, this is a bit different from the transition diagram found on Wikipedia \cite{mesi_wiki}.
 The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared state (S), which cannot be found Figure \ref{fig:mesi}.
-This among all other transistions will be described in the following section.
+This among all other transistions will be described in this section.
 
 TODO: describe cache hit for I. 
 
@@ -169,7 +169,8 @@ TODO: describe cache hit for I.
     \label{fig:mesi}
 \end{figure}
 
-$I \to S$. The transition from invalid (I) to shared (S) is instead modeled using the step phase (see Figure \ref{fig:mesi}) and the after snoop phase (see Figure \ref{fig:mesi_after_snoop}).
+$I \to S$. 
+The transition from I to S is instead modeled using the step phase (see Figure \ref{fig:mesi}) and the after snoop phase (see Figure \ref{fig:mesi_after_snoop}).
 When a cache miss occurs, the cache line is moved from invalid (I) to exclusive (E) as seen in Figure \ref{fig:mesi}.
 This will issue a bus transaction as a miss occured.
 Another core that is currently holding the same cache line will snoop the bus transaction and change the transaction to signal that it is currently holding the same cache line.
@@ -230,6 +231,17 @@ When a cache line in M is evicted or invalidated, it must be flushed.
 A flush will result in stalling all cores until the operation is complete.
 
 \subsubsection{Dragon}
+A transition diagram for our implementation of the processor initiated transitions for the Dragon protocol can be found in Figure \ref{fig:dragon}.
+Compared to the implementation of the MESI protocol, the implementation of the Dragon is more impacted by the after snoop phase.
+This is to make sure that the correct transitions occur when dealing with shared cache lines.
+Since the Dragon protocol has two shared states, the transition diagram is more complicated.
+Like the MESI protocol, our implementation does not line up directly with the transition diagram shown on Wikipedia \cite{dragon_wiki}.
+One noticable difference is that there are no transitions from an ``invalid'' state to state Sc, Sm and M.
+Like the previous section all transitions will be described in this section.
+Even if ``invalid'' is not a state in the Dragon protocol, ``Any'' will denote a cache line that is not currently in E, Sc, Sm or M.
+Thus, the cache line is guaranteed to miss in this ``state''.
+
+TODO: cache-to-cache
 
 \begin{figure}[H]
     \centering
@@ -238,6 +250,28 @@ A flush will result in stalling all cores until the operation is complete.
     \label{fig:dragon}
 \end{figure}
 
+$Any \to E$.
+When a cache miss occurs while a core is reading to a cache line the cache line will enter state E.
+A bus transaction will be issued, telling other cores that a read has happened.
+No other core has a copy of the cache line, so the cache line will remain in state E.
+
+$Any \to Sc$.
+When a cache miss occurs while a core is reading to a cache line the cache line will enter state E.
+A bus transaction will be issued, telling other cores that a read has happened.
+At least one other core has a copy of the cache line, so these cores will during the snoop phase notice the bus transaction, and change their states accordingly.
+
+$Any \to M$.
+When a cache miss occurs while a core is writing to a cache line the cache line will enter state M.
+A bus transaction will be issued, telling other cores that a read has happened.
+No other core has a copy of the cache line, so the cache line will remain in state M.
+
+$Any \to Sm$.
+When a cache miss occurs while a core is writing to a cache line the cache line will enter state M.
+A bus transaction will be issued, telling other cores that a write has happened.
+At least one other core has a copy of the cache line, so these cores will during the snoop phase notice the bus transaction.
+and change their states to Sc.
+Any cache line that was in Sm or M will have to propagate the data.
+This is represented as a penalty where all cores are stalled as no data is transmitted.
 
 \begin{figure}[H]
     \centering
@@ -246,6 +280,13 @@ A flush will result in stalling all cores until the operation is complete.
     \label{fig:dragon_snoop}
 \end{figure}
 
+$E \to M$
+
+$Sc \to M$
+
+$Sm \to M$
+
+
 \begin{figure}[H]
     \centering
     \incfig{dragon_after_snoop}
@@ -253,5 +294,32 @@ A flush will result in stalling all cores until the operation is complete.
     \label{fig:dragon_after_snoop}
 \end{figure}
 
+$M \to M$.
+When a cache hit occurs while a core is writing or reading to a cache line in state M, the cache line will remain in state M and no bus transaction will be issued.
+
+$E \to E$.
+When a cache hit occurs while a core is reading to a cache line in state E, the cache line will remain in state E and no bus transaction will be issued.
+
+$Sc \to Sc$.
+When a cache hit occurs while a core is reading to a cache line in state Sc, the cache line will remain in state Sc and no bus transaction will be issued.
+
+$Sm \to Sm$.
+When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
 
 \subsection{Testing}
+To verify that all state transitions work, a set of unit tests for the MESI protocol and the Dragon protocol have been constructed.
+The tests are manually constructed to check if a certain transition happend given a cache line's current state and whether another core is occupying the same cache line.
+These tests are all successful.
+However, the tests are not comprehensive in that they include all possible scenarios.
+For example, in the MESI protocol a cache line can transition to state I if it is invalidated or evicted.
+The tests implemented only invalidate a cache line to make sure that it goes to state I.
+
+Some integration tests of smaller scale have been established as well to verify that all components work as intended.
+Only one core is used in these tests.
+Thus, this should in principle verify that the cache implementation is correct, not neccesarily that the cache coherence implementation is correct.
+
+TODO: make sure the tests are working
+
+
+
+

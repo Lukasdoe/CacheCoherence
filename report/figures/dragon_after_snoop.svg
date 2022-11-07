@@ -39,25 +39,6 @@
     </marker>
     <marker
        style="overflow:visible"
-       id="marker4572"
-       refX="0"
-       refY="0"
-       orient="auto-start-reverse"
-       inkscape:stockid="Arrow2"
-       markerWidth="7.6999998"
-       markerHeight="5.5999999"
-       viewBox="0 0 7.7 5.6"
-       inkscape:isstock="true"
-       inkscape:collect="always"
-       preserveAspectRatio="xMidYMid">
-      <path
-         transform="scale(0.7)"
-         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         id="path4570" />
-    </marker>
-    <marker
-       style="overflow:visible"
        id="Arrow2"
        refX="0"
        refY="0"
@@ -84,8 +65,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.99437388"
-     inkscape:cx="570.71089"
-     inkscape:cy="370.58496"
+     inkscape:cx="492.26957"
+     inkscape:cy="132.24402"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -192,11 +173,6 @@
          id="tspan1835-9"
          x="73.223534"
          y="236.7074">Sm</tspan></text>
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker4572)"
-       d="M 147.12145,228.99996 V 195.65848"
-       id="path4568"
-       sodipodi:nodetypes="cc" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
@@ -206,7 +182,11 @@
          sodipodi:role="line"
          id="tspan7719-5"
          x="99.411072"
-         y="239.91829">BusRdShared</tspan></text>
+         y="239.91829">BusRdShared</tspan><tspan
+         sodipodi:role="line"
+         x="99.411072"
+         y="243.88704"
+         id="tspan446">BusUpdShared</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker8495)"
        d="m 140.69611,234.96771 -56.325263,0.009"
@@ -227,16 +207,6 @@
          id="tspan477"
          x="99.411072"
          y="185.49933">BusRdShared</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
-       x="149.11996"
-       y="212.93932"
-       id="text479-3"><tspan
-         sodipodi:role="line"
-         id="tspan477-6"
-         x="149.11996"
-         y="212.93932">BusUpdShared</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
