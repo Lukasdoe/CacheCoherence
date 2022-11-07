@@ -1,4 +1,5 @@
 \section{Method}
+The following section describes how the different components work as well as a more detailed view of how the MESI and Dragon protocols work.
 
 \subsection{Components}
 Figure \ref{fig:overview} shows an overview of how the different components in the simulation are
@@ -33,16 +34,16 @@ Record {
 
 
 \subsubsection{System}
-The system keeps the state of all the cores and make sure that each core is updated.  The system
-will create as many cores as needed to satisfy each file unpacked from the zip archive.  The update
-step for each core consists of three stages: \texttt{step}, \texttt{snoop} and
-\texttt{after\_snoop}.  The \texttt{step} stage parses the new instruction into a record and updates
-the state given the record.  The \texttt{snoop} stage will snoop the bus.  If the bus currently have
-an active task and the task's issuer is not the core that is snooping the core may update its state
-given the active task and current state for that cache line.  The \texttt{after\_snoop} stage is a
-cleanup stage done after the snooping stage.  It consists of changing the state of a cache line
-depending on the outcome of the snoop stage, that is, if it turns out that the cache line should be
-shared.
+The system keeps the state of all the cores and make sure that each core is updated.
+The system will create as many cores as needed to satisfy each file unpacked from the zip archive.
+The update step for each core consists of three stages: \texttt{step}, \texttt{snoop} and \texttt{after\_snoop}.
+The \texttt{step} stage parses the new instruction into a record and updates the state given the record.
+The \texttt{snoop} stage will snoop the bus.
+If the bus currently have an active task and the task's issuer is not the core that is snooping the core may update its state given the active task and current state for that cache line.
+The \texttt{after\_snoop} stage is a cleanup stage done after the snooping stage.
+It consists of changing the state of a cache line depending on the outcome of the snoop stage, that is, if it turns out that the cache line should be shared.
+The update is structured this way to avoid race conditions between each intermediate state.
+
 
 \subsubsection{Core}
 The core keeps the state of the cache and all the records.
@@ -137,9 +138,14 @@ and operations are for example invoked like
 protocol.snoop(...)
 \end{lstlisting}
 
-This is really useful as the cache does not need to know which protocol is used, but relying on the
-fact that the underlying protocol has some defined behaviour for the invoked operation.
+This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behaviour for the invoked operation.
+In every update cycle, as described earlier, there are three phases
 
+\begin{enumerate}
+    \item \textbf{Step}. The step phase correspond to either a \texttt{read()} or \texttt{write()}.
+    \item \textbf{Snoop}. The snoop phase correspond to \texttt{snoop()}.
+    \item \textbf{After snoop}. The after snoop phase correspond to \texttt{after\_snoop()}.
+\end{enumerate}
 
 \subsection{Protocol}
 Like described in section \ref{sec:sub_protocol}, each protocol needs to implement a set of method
@@ -148,50 +154,104 @@ Dragon protocol implements these, as well as show the state diagrams that come u
 
 \subsubsection{MESI}
 
-A transition diagram for the core induced transitions can be found in Figure \ref{fig:mesi}.
-The MESI protocol
+A transition diagram for our implementation of the processor initiated transitions for the MESI protocol can be found in Figure \ref{fig:mesi}.
+However, this is a bit different from the transition diagram found on Wikipedia \cite{mesi_wiki}.
+The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared state (S), which cannot be found Figure \ref{fig:mesi}.
+This among all other transistions will be described in the following section.
+
+TODO: describe cache hit for I. 
+
 
 \begin{figure}[H]
     \centering
     \incfig{mesi}
-    \caption{Mesi}
+    \caption{Mesi. The step phase of the update cycle.}
     \label{fig:mesi}
 \end{figure}
 
-\begin{figure}[ht]
+$I \to S$. The transition from invalid (I) to shared (S) is instead modeled using the step phase (see Figure \ref{fig:mesi}) and the after snoop phase (see Figure \ref{fig:mesi_after_snoop}).
+When a cache miss occurs, the cache line is moved from invalid (I) to exclusive (E) as seen in Figure \ref{fig:mesi}.
+This will issue a bus transaction as a miss occured.
+Another core that is currently holding the same cache line will snoop the bus transaction and change the transaction to signal that it is currently holding the same cache line.
+The core that issued the bus transaction will in the after snoop phase acknowledge the shared signal and change its state to S, see the transistion from E to S in Figure \ref{fig:mesi_after_snoop}.
+
+$I \to E$.
+When a cache miss occurs, the core will transistion to E.
+It will issue a bus transaction, but since no other core is holding the same cache line, the transaction will not be changed in the snoop phase, eliminating the chance of transitioning to S in the after snoop phase.
+
+$I \to M$.
+When a cache write miss occurs the core must first fetch the data due to write-allocate.
+A write-allocate is simulated by stalling for the standard penalty amount of a read miss, while transitioning the cache line to state M as seen in Figure \ref{fig:mesi}.
+A \texttt{BusRdXMem} bus transaction will be issued.
+Other cores that are snooping will notice this.
+They will invalidate their cache lines and transition to I.
+
+\begin{figure}[H]
     \centering
     \incfig{mesi_snoop}
-    \caption{Mesi snoop}
+    \caption{Mesi. The snoop phase of the update cycle.}
     \label{fig:mesi_snoop}
 \end{figure}
 
-\begin{figure}[ht]
+$S \to S$.
+When a read hit occurs, no state transition will occur and no bus transation will be issued.
+Thus, the state will stay in S.
+
+$S \to M$.
+When a cache hit occurs while a core is writing to a cache line that is in S, a transition to M will occur and a \texttt{BusRdXMem} bus transaction will be issued.
+Other cores that are snooping will notice this.
+They will invalidate their cache lines and transition to I.
+
+$E \to E$.
+When a cache hit occurs while a core is reading to a cache line that is in E, the cache line will remain in E and no bus transaction will be issued.
+
+$E \to M$.
+When a cache hit occurs while a core is writing to a cache line that is in E, a transition to M will occur but no bus transaction since the core can be sure that has the only copy of the cache line.
+
+$M \to M$.
+When a cache hit occurs while a core is writing or reading to a cache line that is in M, the cache line will remain in M and no bus transaction will be issued since it can be sure that no other core has a copy of the cache line.
+
+
+\begin{figure}[H]
     \centering
     \incfig{mesi_after_snoop}
-    \caption{Mesi after snoop}
+    \caption{Mesi. The after snoop phase of the update cycle.}
     \label{fig:mesi_after_snoop}
 \end{figure}
 
+From a bus transaction, a cache line can either go to S or I by looking at the Figure \ref{fig:mesi_snoop}.
+When a \texttt{BusRdMem} occurs the cache line will go to state S, as it knows that some other core has currently accessed the same cache line.
+This will as mentioned happend in the snoop phase.
+The core that is changing the cache line to S will also change the type of the bus transaction to allow the scenario described for transition ($I \to S$).
+Moreover, a core that is reading a cache line that another core has in its cache should be able to transition to S in the after snoop phase, while the other core should be able to switch to S in the snoop phase.
+When a \texttt{BusRdXMem} occurs the cache line will go to state I, as it knows that some other core has currently written to the same cache line.
+A cache line can also go to state I if it is evicted.
+When a cache line in M is evicted or invalidated, it must be flushed.
+A flush will result in stalling all cores until the operation is complete.
+
 \subsubsection{Dragon}
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \incfig{dragon}
-    \caption{Dragon}
+    \caption{Dragon. The step phase of the update cycle.}
     \label{fig:dragon}
 \end{figure}
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \incfig{dragon_snoop}
-    \caption{Dragon snoop}
+    \caption{Dragon. The snoop phase of the update cycle.}
     \label{fig:dragon_snoop}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \incfig{dragon_after_snoop}
-    \caption{Dragon after snoop}
+    \caption{Dragon. The after snoop phase of the update cycle.}
     \label{fig:dragon_after_snoop}
 \end{figure}
+
+
+\subsection{Testing}

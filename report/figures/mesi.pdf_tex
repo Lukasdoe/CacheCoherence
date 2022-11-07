@@ -78,5 +78,7 @@
     \put(0.74016628,0.36831646){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Cache miss\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=9]{mesi.pdf}}%
     \put(0.7689731,0.21304423){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Any\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{mesi.pdf}}%
+    \put(0.64901218,0.27834504){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdXMem\end{tabular}}}}%
   \end{picture}%
 \endgroup%
