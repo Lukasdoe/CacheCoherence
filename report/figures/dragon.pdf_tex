@@ -79,5 +79,7 @@
     \put(0.20394909,0.29392351){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Any\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=10]{dragon.pdf}}%
     \put(0.27193009,0.28187478){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Read/BusRdMem\end{tabular}}}}%
+    \put(0.32641277,0.2024086){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Write/BusRdMem\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{dragon.pdf}}%
   \end{picture}%
 \endgroup%
