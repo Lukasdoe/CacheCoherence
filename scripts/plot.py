@@ -1,9 +1,9 @@
 import os
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 import pandas as pd
 
-# legend = ["1024 B", "4096 B", "8192 B"]
 
 path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath(os.path.join(path, ".."))
@@ -11,50 +11,18 @@ style_path = os.path.join(path, "stylesheet.txt")
 out_path = os.path.join(root_path, "report/figures")
 plt.style.use(style_path)
 
+MARGIN = 1000
 
-def cycles_same(df, field, legend, advanced=False):
-    dfs = []
-    inputs = ["blackscholes_four.zip", "bodytrack_four.zip", "fluidanimate_four.zip"]
-    cond = (
-        (df["protocol"] != "Dragon")
-        if advanced
-        else (df["protocol"] != "Mesi (advanced)")
-    )
-    for file in inputs:
-        df_file = (
-            df[(df["input"] == file) & cond]
-            .groupby(["protocol", field])[["total_cycles"]]
-            .mean()
-            .unstack(field, fill_value=0)
-        )
-        dfs.append(df_file)
 
-    names = ["blackscholes", "bodytrack", "fluidanimate"]
-    for i in range(1):
-        fig, ax = plt.subplots()
-        dfs[i].plot.bar(
-            rot=0,
-            ax=ax,
-            alpha=0.7,
-            color=["red", "orange", "olive"],
-        )
-        ax.set_ylabel(r"Cycles")
-        ax.set_xlabel(r"")
-        ax.legend(legend, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=3)
-        advanced_name = "_advanced" if advanced else ""
-        out = os.path.join(out_path, f"{field}_{names[i]}{advanced_name}.svg")
-        plt.savefig(out)
-        plt.show()
+class MyScalarFormatter(ScalarFormatter):
+    def _set_format(self):
+        self.format = "%.2f"
 
 
 def cycles(df, field, legend, advanced=False):
     dfs = []
     inputs = ["blackscholes_four.zip", "bodytrack_four.zip", "fluidanimate_four.zip"]
-    cond = (
-        (df["protocol"] != "Dragon")
-        if advanced
-        else (df["protocol"] != "Mesi (advanced)")
-    )
+    cond = (df["protocol"] != "Dragon") if advanced else (df["protocol"] != "Mesi (advanced)")
     for file in inputs:
         df_file = (
             df[(df["input"] == file) & cond]
@@ -65,37 +33,43 @@ def cycles(df, field, legend, advanced=False):
         dfs.append(df_file)
 
     names = ["blackscholes", "bodytrack", "fluidanimate"]
-    legend = (
-        ["Mesi", "Mesi (advanced)"] if advanced else ["Dragon", "Mesi", "Difference"]
-    )
+    legend = ["Mesi", "Mesi (advanced)", "Difference"] if advanced else ["Dragon", "Mesi", "Difference"]
     for i in range(3):
-        fig, (ax1, ax2) = plt.subplots(2)
-        ax1.axhline(y=0, color="black", linestyle="-")
-
+        fig = plt.figure()
+        gs = fig.add_gridspec(2, hspace=0.20)
+        axs = gs.subplots(sharex=True, sharey=False)
+        axs[0].axhline(y=0, color="black", linestyle="-")
         cpy = dfs[i].copy()["total_cycles"]
-        cpy["difference"] = cpy["Mesi"] - cpy["Dragon"]
-        cpy["difference"].plot.bar(rot=0, ax=ax1, alpha=0.7, color=["olive"])
-        ax1.set_ylabel(r"Cycles")
-        ax1.set_xlabel(r"")
-        ax1.legend([])
-        ax1.set_ybound(-300000, 300000)
+        if advanced:
+            cpy["difference"] = cpy["Mesi"] - cpy["Mesi (advanced)"]
+        else:
+            cpy["difference"] = cpy["Mesi"] - cpy["Dragon"]
+        cpy["difference"].plot.bar(rot=0, ax=axs[0], alpha=0.7, color=["olive"])
+        axs[0].set_ylabel(r"Cycles", rotation="horizontal")
+        axs[0].set_xlabel(r"")
+        axs[0].legend([])
+        axs[0].ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
+        axs[0].yaxis.set_major_formatter(MyScalarFormatter(useMathText=True))
+        axs[0].yaxis.major.formatter.set_powerlimits((0, 2))
+        axs[0].yaxis.set_label_coords(-0.1, 1.08)
 
-        dfs[i].plot.bar(rot=0, ax=ax2, alpha=0.7, color=["red", "orange", "olive"])
-        ax2.set_ylabel(r"Cycles")
-        ax2.set_xlabel(r"")
-        ax2.legend([])
+        dfs[i].plot.bar(rot=0, ax=axs[1], alpha=0.7, color=["red", "orange", "olive"])
+        axs[1].set_ylabel(r"")
+        axs[1].set_xlabel(r"")
+        axs[1].legend([])
+        axs[1].yaxis.set_major_formatter(MyScalarFormatter(useMathText=True))
+        axs[1].yaxis.major.formatter.set_powerlimits((0, 2))
 
-        handles, _ = ax1.get_legend_handles_labels()
-        handles2, _ = ax2.get_legend_handles_labels()
-        h = handles + handles2
+        handles, _ = axs[0].get_legend_handles_labels()
+        handles2, _ = axs[1].get_legend_handles_labels()
+        h = handles2 + handles
+        ncol = 2 if advanced else 3
         fig.legend(
             labels=legend,
-            handles=h[0:],
+            handles=h,
             loc="upper center",
-            bbox_to_anchor=(0.5, 0),
-            fancybox=True,
-            shadow=True,
-            ncol=5,
+            bbox_to_anchor=(0.5, 0.00),
+            ncol=ncol,
         )
         advanced_name = "_advanced" if advanced else ""
         out = os.path.join(out_path, f"{field}_{names[i]}{advanced_name}.svg")
@@ -103,41 +77,57 @@ def cycles(df, field, legend, advanced=False):
         plt.show()
 
 
-# Ref: https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
 def custom(df, field, advanced=False):
-    dfs = []
     inputs = ["blackscholes_four.zip", "bodytrack_four.zip", "fluidanimate_four.zip"]
-    cond = (
-        (df["protocol"] != "Dragon")
-        if advanced
-        else (df["protocol"] != "Mesi (advanced)")
-    )
-    for file in inputs:
-        df_file = (
-            df[cond]
-            .groupby(["protocol", "input"])[[field]]
-            .mean()
-            .unstack("input", fill_value=0)
-        )
-        dfs.append(df_file)
+    cond = (df["protocol"] != "Dragon") if advanced else (df["protocol"] != "Mesi (advanced)")
+    df = df[cond].groupby(["protocol", "input"])[[field]].mean().unstack("protocol", fill_value=0)
 
-    names = ["blackscholes", "bodytrack", "fluidanimate"]
-    legend = ["Blackscholes", "Bodytrack", "Fluidanimate"]
-    for i in range(1):
-        fig, ax = plt.subplots()
-        dfs[i].plot.bar(
-            rot=0,
-            ax=ax,
-            alpha=0.7,
-            color=["red", "orange", "olive"],
-        )
-        ax.set_ylabel(r"Cycles")
-        ax.set_xlabel(r"")
-        ax.legend(legend, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2)
-        advanced_name = "_advanced" if advanced else ""
-        out = os.path.join(out_path, f"{field}{advanced_name}.pdf")
-        plt.savefig(out)
-        plt.show()
+    names = ["Blackscholes", "Bodytrack", "Fluidanimate"]
+    legend = ["Mesi", "Mesi (advanced)", "Difference"] if advanced else ["Dragon", "Mesi", "Difference"]
+
+    fig = plt.figure()
+    gs = fig.add_gridspec(2, hspace=0.20)
+    axs = gs.subplots(sharex=True, sharey=False)
+    axs[0].axhline(y=0, color="black", linestyle="-")
+    cpy = df.copy()
+    cpy = df.copy()[field]
+    if advanced:
+        cpy["difference"] = cpy["Mesi"] - cpy["Mesi (advanced)"]
+    else:
+        cpy["difference"] = cpy["Mesi"] - cpy["Dragon"]
+    cpy["difference"].plot.bar(rot=0, ax=axs[0], alpha=0.7, color=["olive"])
+    axs[0].set_ylabel(r"Cycles", rotation="horizontal")
+    axs[0].set_xlabel(r"")
+    axs[0].legend([])
+    axs[0].ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
+    axs[0].yaxis.set_major_formatter(MyScalarFormatter(useMathText=True))
+    axs[0].yaxis.major.formatter.set_powerlimits((0, 2))
+    axs[0].yaxis.set_label_coords(-0.1, 1.08)
+
+    df.plot.bar(rot=0, ax=axs[1], alpha=0.7, color=["red", "orange", "olive"])
+    axs[1].set_ylabel(r"")
+    axs[1].set_xlabel(r"")
+    axs[1].set_xticklabels(names)
+    axs[1].legend([])
+    axs[1].ticklabel_format(style="sci", scilimits=(0, 0), axis="y")
+    axs[1].yaxis.set_major_formatter(MyScalarFormatter(useMathText=True))
+    axs[1].yaxis.major.formatter.set_powerlimits((0, 2))
+
+    handles, _ = axs[0].get_legend_handles_labels()
+    handles2, _ = axs[1].get_legend_handles_labels()
+    h = handles2 + handles
+    ncol = 2 if advanced else 3
+    fig.legend(
+        labels=legend,
+        handles=h,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.00),
+        ncol=ncol,
+    )
+    advanced_name = "_advanced" if advanced else ""
+    out = os.path.join(out_path, f"{field}{advanced_name}.svg")
+    plt.savefig(out, bbox_inches="tight")
+    plt.show()
 
 
 def cache_size(advanced=False):
@@ -179,8 +169,9 @@ def invalidations(advanced=False):
 
 
 if __name__ == "__main__":
-    cache_size(False)
-    # block_size(True)
-    # associativity(True)
-    # bus_traffic()
-    # invalidations()
+    advanced = False
+    cache_size(advanced)
+    block_size(advanced)
+    associativity(advanced)
+    bus_traffic(advanced)
+    invalidations(advanced)
