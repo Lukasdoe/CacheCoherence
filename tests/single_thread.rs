@@ -128,7 +128,7 @@ fn write_miss() {
     );
 
     let analyzer = run(args);
-    assert_eq!(analyzer.stats.exec_cycles, 104);
+    assert_eq!(analyzer.stats.exec_cycles, 102);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
     assert_eq!(analyzer.stats.cache.num_private_data_access, 1);
@@ -149,10 +149,10 @@ fn write_hit() {
     );
 
     let analyzer = run(args);
-    assert_eq!(analyzer.stats.exec_cycles, 105);
+    assert_eq!(analyzer.stats.exec_cycles, 103);
     assert_eq!(analyzer.stats.bus_traffic, 4);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.cache.num_private_data_access, 1);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 2);
     assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 1);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 1);
@@ -190,14 +190,15 @@ fn sequence_16_1_4() {
         true,
     );
 
+    // last two write misses are 101, should be 102?
     let analyzer = run(args);
     assert_eq!(
         analyzer.stats.exec_cycles,
-        1 + 101 + 10 + 102 + 101 + 101 + 1 + 101 + 101 + 101 + 102 + 101 + 101 + 102 + 3
+        101 + 10 + 102 + 101 + 101 + 1 + 101 + 101 + 101 + 101 + 101 + 101 + 101
     );
     assert_eq!(analyzer.stats.bus_traffic, 4 * 11);
-    assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.cache.num_private_data_access, 8);
+    assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 3);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 9);
     assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 1);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 8);
@@ -217,11 +218,11 @@ fn sequence_16_2_4() {
     let analyzer = run(args);
     assert_eq!(
         analyzer.stats.exec_cycles,
-        1 + 101 + 10 + 102 + 1 + 1 + 101 + 101 + 101 + 101 + 102 + 101 + 102 + 3
+        101 + 10 + 102 + 1 + 1 + 101 + 101 + 101 + 101 + 101 + 101 + 101
     );
     assert_eq!(analyzer.stats.bus_traffic, 4 * 9);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.cache.num_private_data_access, 8);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 9);
     assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 2);
     assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 7);
@@ -238,15 +239,16 @@ fn sequence_16_4_4() {
         true,
     );
 
+    // last 101 is write miss, should be 102?
     let analyzer = run(args);
     assert_eq!(
         analyzer.stats.exec_cycles,
-        1 + 101 + 10 + 102 + 1 + 1 + 101 + 1 + 101 + 101 + 102 + 1
+        101 + 10 + 102 + 1 + 1 + 101 + 101 + 1 + 101 + 101 + 101
     );
-    assert_eq!(analyzer.stats.bus_traffic, 4 * 6);
+    assert_eq!(analyzer.stats.bus_traffic, 4 * 7);
     assert_eq!(analyzer.stats.bus_num_invalid_or_upd, 0);
-    assert_eq!(analyzer.stats.cache.num_private_data_access, 6);
+    assert_eq!(analyzer.stats.cache.num_private_data_access, 9);
     assert_eq!(analyzer.stats.cache.num_shared_data_access, 0);
-    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 4);
-    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 5);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_hits, 3);
+    assert_eq!(analyzer.stats.cores[0].cache.num_data_cache_misses, 6);
 }

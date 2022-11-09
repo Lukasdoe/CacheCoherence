@@ -355,6 +355,23 @@ mod tests {
             (DragonState::E, layout.tag(addr))
         );
 
+        if let Some(action) = action {
+            bus.put_on(0, action);
+        }
+
+        let task = protocol.snoop(&mut bus);
+        assert!(task.is_none());
+        assert_eq!(
+            protocol.cache_state[store_idx].unwrap(),
+            (DragonState::E, layout.tag(addr))
+        );
+
+        protocol.after_snoop(&mut bus);
+        assert_eq!(
+            protocol.cache_state[store_idx].unwrap(),
+            (DragonState::E, layout.tag(addr))
+        );
+
         let action = protocol.read(addr, Some(store_idx), store_idx, true, &mut bus);
         assert!(action.is_none());
         assert_eq!(
@@ -596,8 +613,6 @@ mod tests {
 
         let task = protocol.snoop(&mut bus);
 
-        // should transition protocol to Sm here?
-        // since after_snoop only works for (task.issuer_id == self.core_id)
         assert!(task.is_some());
         assert_eq!(
             protocol.cache_state[store_idx].unwrap(),
@@ -610,6 +625,44 @@ mod tests {
             other_protocol.cache_state[store_idx].unwrap(),
             (DragonState::Sc, layout.tag(addr))
         );
+
+        while bus.occupied() {
+            bus.update();
+        }
+
+        let mut another_protocol = Dragon::new(2, CACHE_SIZE, BLOCK_SIZE, ASSOCIATIVITY, &layout);
+
+        assert_eq!(another_protocol.cache_state[store_idx], None);
+        let action = another_protocol.write(addr, None, store_idx, false, &mut bus);
+        assert!(action.is_some());
+        assert_eq!(
+            another_protocol.cache_state[store_idx].unwrap(),
+            (DragonState::M, layout.tag(addr))
+        );
+
+        if let Some(action) = action {
+            bus.put_on(2, action);
+        }
+
+        let _ = protocol.snoop(&mut bus);
+        let task = other_protocol.snoop(&mut bus);
+
+        assert!(task.is_some());
+        assert_eq!(
+            protocol.cache_state[store_idx].unwrap(),
+            (DragonState::Sc, layout.tag(addr))
+        );
+        assert_eq!(
+            other_protocol.cache_state[store_idx].unwrap(),
+            (DragonState::Sc, layout.tag(addr))
+        );
+
+        another_protocol.after_snoop(&mut bus);
+        assert_eq!(
+            another_protocol.cache_state[store_idx].unwrap(),
+            (DragonState::Sm, layout.tag(addr))
+        );
+
     }
 
     #[test]
