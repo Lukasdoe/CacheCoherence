@@ -78,8 +78,9 @@ impl Dragon {
                 Some(BusAction::BusRdMem(addr, self.block_size)),
             ),
             (_, ProcessorAction::Write, false) => (
-                DragonState::M,
-                Some(BusAction::BusRdMem(addr, self.block_size)),
+                // dirty hack to signal after_snoop that this is a cold write
+                DragonState::E,
+                Some(BusAction::BusUpdMem(addr, self.block_size)),
             ),
             _ => panic!(
                 "({:?}) Unresolved processor event: {:?}",
@@ -184,13 +185,13 @@ impl Dragon {
             // Event: Bus Update && Line is Sc
             // => pass
 
-            // catch some buggy cases
-            (BusAction::BusUpdMem(_, _) | BusAction::BusUpdShared(_, _), DragonState::E) => {
-                panic!(
-                    "({:?}) Tag {:x}, Task {:?}, State {:?}",
-                    self.core_id, tag, task, state
-                )
-            }
+            // Event: Someone else does a cold write (BusRd + BusUpd)
+            // and we are in E or M => Sc
+            (
+                BusAction::BusUpdMem(_, _) | BusAction::BusUpdShared(_, _),
+                DragonState::E | DragonState::M,
+            ) => *state = (DragonState::Sc, tag),
+
             // Ignore bus events that don't change anything
             _ => (),
         };
@@ -215,7 +216,7 @@ impl Dragon {
         let state = &mut self.cache_state[idx];
 
         match (
-            &task.action,
+            task.action,
             state.as_ref().map_or(DragonState::E, |value| value.0),
         ) {
             // Event: We read using BusRdMem and some other core changed action to BusRdShared
@@ -234,6 +235,21 @@ impl Dragon {
 
             (BusAction::BusUpdMem(_, _), DragonState::M) => {
                 bus.clear();
+            }
+
+            // cold writes are signaled by not setting the state to the appropriate M
+            (BusAction::BusUpdMem(_, _), DragonState::E) => {
+                // BusUpd not required, BusRd time should be counted though.
+                task.action = BusAction::BusRdMem(addr, self.block_size);
+                task.remaining_cycles = Bus::price(&task.action);
+                *state = Some((DragonState::M, tag));
+            }
+            (BusAction::BusUpdShared(_, _), DragonState::E) => {
+                // BusUpd and BusRd required => adjust time.
+                task.action = BusAction::BusUpdShared(addr, self.block_size);
+                task.remaining_cycles = Bus::price(&task.action)
+                    + Bus::price(&BusAction::BusRdShared(addr, self.block_size));
+                *state = Some((DragonState::Sm, tag));
             }
             _ => (),
         }
@@ -403,14 +419,14 @@ mod tests {
         assert!(action.is_some());
         assert_eq!(
             protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         let action = protocol.read(addr, Some(store_idx), store_idx, true, &mut bus);
         assert!(action.is_none());
         assert_eq!(
             protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         let action = protocol.write(addr, Some(store_idx), store_idx, true, &mut bus);
@@ -510,7 +526,7 @@ mod tests {
         assert!(action.is_some());
         assert_eq!(
             other_protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         if let Some(action) = action {
@@ -591,7 +607,21 @@ mod tests {
 
         assert_eq!(protocol.cache_state[store_idx], None);
         let action = protocol.write(addr, None, store_idx, false, &mut bus);
+
+        assert_eq!(
+            protocol.cache_state[store_idx].unwrap(),
+            (DragonState::E, layout.tag(addr))
+        );
+
         assert!(action.is_some());
+        if let Some(action) = action {
+            assert_eq!(action, BusAction::BusUpdMem(addr, BLOCK_SIZE));
+            bus.put_on(0, action);
+        }
+
+        protocol.after_snoop(&mut bus);
+        bus.clear();
+
         assert_eq!(
             protocol.cache_state[store_idx].unwrap(),
             (DragonState::M, layout.tag(addr))
@@ -637,7 +667,7 @@ mod tests {
         assert!(action.is_some());
         assert_eq!(
             another_protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         if let Some(action) = action {
@@ -662,7 +692,6 @@ mod tests {
             another_protocol.cache_state[store_idx].unwrap(),
             (DragonState::Sm, layout.tag(addr))
         );
-
     }
 
     #[test]
@@ -691,7 +720,7 @@ mod tests {
         assert!(action.is_some());
         assert_eq!(
             other_protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         if let Some(action) = action {
@@ -770,7 +799,7 @@ mod tests {
         assert!(action.is_some());
         assert_eq!(
             other_protocol.cache_state[store_idx].unwrap(),
-            (DragonState::M, layout.tag(addr))
+            (DragonState::E, layout.tag(addr))
         );
 
         if let Some(action) = action {
