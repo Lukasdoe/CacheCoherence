@@ -31,7 +31,7 @@ Record {
 }
 \end{lstlisting}
 
-\subsubsection{System}
+\subsubsection{System}\label{sssection:system}
 
 The system maintains the overall state of all the cores and updates the cores' internal states every
 cycles. During creation, the system initializes a new core for each supplied record stream.
@@ -62,38 +62,38 @@ shared read.
 The core maintains the state of its L1 cache and its record stream.
 
 \subsubsection{Cache}
-The cache keeps the state of each cache line, the corresponding LRU value for each cache line, which
-protocol is in use, the scheduled instructions as well as the address layout of the cache.  When the
-cache is initialized in each core the address layout is calculated and consists of the offset
-length, the index length, the tag length, the set size and the block size.  The cache lines and LRU
-are both represented as a two dimensional vector containing an unsigned integer, where the rows
-represent the sets and the columns represent the blocks.  Note that there is no need to index the
-words directly as we load the whole block each time we access a word within the block.  The
-scheduled instructions are stored as a deque containing a tuple, the address and the action.  There
-are two valid actions a scheduled instruction can have, read and write.  Read operations are
-inserted at the front of the deque, while the write operations are inserted at the back of the
-deque.  Since the deque is processed from front to back, higher priority will be given to the read
-operations rather than the write operations.
+The cache stores the state of each cache line, the corresponding LRU values, which
+protocol is in use, as well as the address layout of the cache. This layout is computed during
+initialization of the cache. It uses the block-offset length, the index length, the tag length,
+the cache-set size and the block size to provide methods for calculating the tag and index of a
+given address. It is also used to convert between two cache representations, where one is made of
+nested vectors that follow the idea of a cache that contains cache sets that contain the cache
+lines. The other representation that we use is similar to the nested version, but flattened into a
+single vector of contiguous elements.
 
-The cache is updated at every step the core is updated.  During an update the cache first checks if
-there is an active task on the bus that does not belong to the core that is updating.  If that is
-not the case, the cache will return immediately, stalling the cache as the cache has to wait for its
-last task to finish.  Otherwise the cache will pop the front of the deque and try to do either an
-internal load or internal store depending on the action of the popped instruction.  An internal load
-will search for the given address to see if it is already present in the cache, a hit, and perform
-the neccesary steps to update the state for the cache line depending on which protocol which is in
-use.  If there is not cache hit, the cache will check if a writeback is needed given the current
-value on the cache line.  An internal store will also search for the given address to see if it
-present in the cache, but will in the case of a cache miss push a read action to the deque to fetch
-the current address before writing to it --- write-allocate policy.  Both the internal load and
-internal store will put the needed action on the bus if the bus is not occupied and it is required
-by the state transition.
+The cache lines and LRU are both stored as a two dimensional vector containing an unsigned integer,
+where the rows represent the sets and the columns represent the cache lines. Note that there is no need
+to actually index into the cache lines using the block offset, because we only simulate the cache
+without actually storing the cached values.
 
+During the \texttt{step} phase (\ref{sssection:system}) of a core, the cache's update function is
+called, if the core is not currently stalled by an ``other''-record. This update function first checks if
+the bus is currently processing a transaction that belongs to this cache. The cache will return
+immediately if this is the case. The cache therefore blocks further execution of new instructions
+until its last transaction is finished. If this is not the case, the cache starts to execute the
+next scheduled load or store instruction, if there is any. To execute a load, the cache searches
+for the given address to see if it is already present in the cache (hit). In case of a cache miss,
+it takes the necessary steps to load the cache block from main memory or one of the other caches.
+If the new cache block's cache set is already full, a write-back of the evicted cache block is
+commissioned. A store instruction also causes the cache to search for the given address to see if it
+present in the cache. If not, a read or read-exclusive (depending on the protocol) is issued,
+because of the write-allocate policy. Any required bus transactions are either directly put on the
+bus or delayed if the bus is currently already used by another cache's transaction.
 
 \subsubsection{Bus}
 
-The bus keeps track of the current task on the bus. There can only be one such task at one time. A
-task has the following form:
+The bus is central storage object that contains one storage slot for a bus \emph{task}.
+This limits the bus to only work on one task at one time. A task has the following form:
 
 \begin{lstlisting}
 Task {
@@ -103,10 +103,11 @@ Task {
 }
 \end{lstlisting}
 
-Thus, the task contains the id of the core that issued the task, the remaining clock cycles until
-the task is finished and the type of bus action.  There are a couple of bus actions which are shared
-between both protocols.  That is, a bus action like \texttt{BusUpdShared} is only valid for the
-Dragon protocol, so when the MESI protocol is used, this action is ignored.  The bus actions are
+The task contains the ID of the core whose cache issued the task, the remaining clock cycles until
+the task is finished and the type of bus action. There are a couple of bus actions which are shared
+between both protocols, however a bus action like \texttt{BusUpdShared} is only valid for the
+Dragon protocol. These protocol specific actions are only issued by the corresponding protocol and
+are otherwise ignored. The bus actions are
 represented in the following form:
 
 \begin{lstlisting}
@@ -121,15 +122,19 @@ BusAction {
 }
 \end{lstlisting}
 
-Each bus action state contains an address and the number of bytes used for the bus exchange.  Each
-update cycle the bus proceeds to advance the bus transaction if there is one.
+Some of the bus transactions have been specialized into two distinct forms, a memory and a shared
+form. This is used to indicate whether the read or update only concerns memory (and therefore takes
+more cycles) or if it goes to one of the other caches, possibly reducing the required time.
 
-\subsubsection{Protocol}
-\label{sec:sub_protocol}
-The protocol is implemented as a trait, where a trait defines shared behavior.  This is very
-similar to how interfaces work in other languages than Rust, with some minor differences.  For
-example, traits cannot have fields.  The shared behavior for protocol trait is defined like:
+Each bus action state contains an address and the number of bytes that should be transmitted. Each
+bus update cycle (which corresponds to one cycle), the bus reduces the number of remaining cycles
+of the currently active bus transaction, if there is one.
 
+\subsubsection{Protocol}\label{sec:sub_protocol}
+
+The protocol is implemented as a Rust \emph{trait}, which defines shared behavior. This is very
+similar to how interfaces work in other languages (e.g.\ Java), with some minor differences. For
+example, traits cannot declare fields. The following methods are defined by the protocol trait:
 \begin{lstlisting}
 read()
 write()
@@ -141,56 +146,52 @@ is_shared()
 \end{lstlisting}
 These operations are required for the implementation of the MESI protocol and the Dragon protocol.
 As briefly described earlier in the cache section, the cache keeps track of the current protocol in
-use.  When the cache is doing operations on specific cache lines, it invokes the proper method for
-the underlying protocol as defined in the trait.  Thus, the protocol is stored like
+use. When the cache is doing operations on specific cache lines, it invokes the proper method for
+the underlying protocol as defined in the trait. Thus, the cache only stores a reference to a protocol
 \begin{lstlisting}
 protocol: Box<dyn Protocol>
 \end{lstlisting}
-and operations are for example invoked like
+and operations are invoked on this instance:
 \begin{lstlisting}
 protocol.snoop(...)
 \end{lstlisting}
+\,.
 
-This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behavior for the invoked operation.
-In every update cycle, as described earlier, there are three phases
-
-\begin{enumerate}
-    \item \textbf{Step}. The step phase correspond to either a \texttt{read()} or \texttt{write()}.
-    \item \textbf{Snoop}. The snoop phase correspond to \texttt{snoop()}.
-    \item \textbf{After snoop}. The after snoop phase correspond to \texttt{after\_snoop()}.
-\end{enumerate}
+This is really useful, because the cache does not need to know which protocol is used and can
+therefore be built more abstract.
 
 \subsection{Protocol}
-Like described in section~\ref{sec:sub_protocol}, each protocol needs to implement a set of method
-to satisfy the trait.  The following two sub sections will go in depth how the MESI protocol and
+Like described in Section~\ref{sec:sub_protocol}, each protocol needs to implement a set of methods
+to satisfy the protocol trait. The following two sub sections will go in depth how the MESI protocol and
 Dragon protocol implements these, as well as show the state diagrams that come up.
 
 \subsubsection{MESI}
 
-A transition diagram for our implementation of the processor initiated transitions for the MESI protocol can be found in Figure~\ref{fig:mesi}.
-However, this is a bit different from the transition diagram found on Wikipedia \cite{mesi_wiki}.
-The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared state (S), which cannot be found Figure~\ref{fig:mesi}.
-This among all other transistions will be described in this section.
+A transition diagram for our implementation of the \texttt{step} phase for the MESI protocol can be found in Figure~\ref{fig:mesi}.
+However, this diagram is a bit different from the transition diagram found on
+Wikipedia~\cite{mesi_wiki}, because it only describes our first transition phase.
+The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared
+state (S), which cannot be found Figure~\ref{fig:mesi}.
 
-TODO: describe cache hit for I.
+This among all other transitions will be described in this section.
 
+% TODO: describe cache hit for I.
 
 \begin{figure}[H]
     \centering
     \incfig{mesi}
-    \caption{MESI. The step phase of the update cycle.}
-    \label{fig:mesi}
+    \caption{MESI. The step phase of the update cycle.}\label{fig:mesi}
 \end{figure}
 
 $I \to S$.
 The transition from I to S is instead modeled using the step phase (see Figure~\ref{fig:mesi}) and the after snoop phase (see Figure~\ref{fig:mesi_after_snoop}).
 When a cache miss occurs, the cache line is moved from invalid (I) to exclusive (E) as seen in Figure~\ref{fig:mesi}.
-This will issue a bus transaction as a miss occured.
-Another core that is currently holding the same cache line will snoop the bus transaction and change the transaction to signal that it is currently holding the same cache line.
-The core that issued the bus transaction will in the after snoop phase acknowledge the shared signal and change its state to S, see the transistion from E to S in Figure~\ref{fig:mesi_after_snoop}.
+This will issue a bus transaction as a miss occurred.
+Another core that is currently holding the same cache line will snoop the bus and change the transaction to signal that it is currently holding the same cache line.
+The core that issued the bus transaction will in the after snoop phase acknowledge the shared signal and change its state to S, see the transition from E to S in Figure~\ref{fig:mesi_after_snoop}.
 
 $I \to E$.
-When a cache miss occurs, the core will transistion to E.
+When a cache miss occurs, the core will transition to E.
 It will issue a bus transaction, but since no other core is holding the same cache line, the transaction will not be changed in the snoop phase, eliminating the chance of transitioning to S in the after snoop phase.
 
 $I \to M$.
@@ -235,7 +236,7 @@ When a cache hit occurs while a core is writing or reading to a cache line that 
 
 From a bus transaction, a cache line can either go to S or I by looking at the Figure~\ref{fig:mesi_snoop}.
 When a \texttt{BusRdMem} occurs the cache line will go to state S, as it knows that some other core has currently accessed the same cache line.
-This will as mentioned happend in the snoop phase.
+This will as mentioned happen in the snoop phase.
 The core that is changing the cache line to S will also change the type of the bus transaction to allow the scenario described for transition ($I \to S$).
 Moreover, a core that is reading a cache line that another core has in its cache should be able to transition to S in the after snoop phase, while the other core should be able to switch to S in the snoop phase.
 When a \texttt{BusRdXMem} occurs the cache line will go to state I, as it knows that some other core has currently written to the same cache line.
@@ -248,13 +249,13 @@ A transition diagram for our implementation of the processor initiated transitio
 Compared to the implementation of the MESI protocol, the implementation of the Dragon is more impacted by the after snoop phase.
 This is to make sure that the correct transitions occur when dealing with shared cache lines.
 Since the Dragon protocol has two shared states, the transition diagram is more complicated.
-Like the MESI protocol, our implementation does not line up directly with the transition diagram shown on Wikipedia \cite{dragon_wiki}.
-One noticable difference is that there are no transitions from an ``invalid'' state to state Sc, Sm and M.
+Like the MESI protocol, our implementation does not line up directly with the transition diagram shown on Wikipedia~\cite{dragon_wiki}.
+One noticeable difference is that there are no transitions from an ``invalid'' state to state Sc, Sm and M.
 Like the previous section all transitions will be described in this section.
 Even if ``invalid'' is not a state in the Dragon protocol, ``Any'' will denote a cache line that is not currently in E, Sc, Sm or M.
 Thus, the cache line is guaranteed to miss in this ``state''.
 
-TODO: cache-to-cache
+% TODO: cache-to-cache
 
 \begin{figure}[H]
     \centering
@@ -320,15 +321,14 @@ $Sm \to Sm$.
 When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
 
 \subsection{Testing}
-To verify that all state transitions work, a set of unit tests for the MESI protocol and the Dragon protocol have been constructed.
-The tests are manually constructed to check if a certain transition happend given a cache line's current state and whether another core is occupying the same cache line.
-These tests are all successful.
-However, the tests are not comprehensive in that they include all possible scenarios.
+To verify that all state transitions work, a set of unit tests for the MESI protocol and the Dragon protocol has been constructed.
+The tests are manually created to test every possible state transition of both protocols.
+
+These tests do not test all possible scenarios, though.
 For example, in the MESI protocol a cache line can transition to state I if it is invalidated or evicted.
 The tests implemented only invalidate a cache line to make sure that it goes to state I.
 
 Some integration tests of smaller scale have been established as well to verify that all components work as intended.
-Only one core is used in these tests.
-Thus, this should in principle verify that the cache implementation is correct, not neccesarily that the cache coherence implementation is correct.
-
-TODO: make sure the tests are working
+These test only simulate a single-core program. This verifies that the cache
+implementation is correct, while not necessarily verifying that the cache coherence protocol
+implementation is correct.
