@@ -142,7 +142,6 @@ Fluidanimate benchmark, but the difference are more subtle the higher the block 
     \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}\label{fig:block_size}
 \end{figure}
 
-
 Given the shifts of the cache size, associativity and the block size it is hard to
 identify which of the protocols is the overall winner. It depends on the benchmark,
 and the difference is not that great after all if we consider the absolute values
@@ -168,7 +167,7 @@ updates for the Dragon protocol for all benchmarks.
         \caption{Bus traffic.}\label{fig:bus_traffic}
     \end{subfigure}%
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:inv_bus}
+    \caption{The graphs show the number of invalidations or bus updates and the amount of bus traffic}\label{fig:inv_bus}
 \end{figure}
 
 \begin{figure}[H]
@@ -185,13 +184,31 @@ updates for the Dragon protocol for all benchmarks.
         \caption{Total of shared memory accesses.}\label{fig:total_shared_accesses}
     \end{subfigure}%
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:accesses}
+    \caption{The graphs show the number of private and shared memory accesses.}\label{fig:accesses}
 \end{figure}
 
 
 
 
 \subsection{Advanced Task}\label{results:advanced}
+
+The analysis in this section is again based on the default configuration described in
+the project description and the same tests will be conducted as in the previous
+section. The difference is that the Dragon protocol is replaced with the
+advanced version of the MESI protocol. The difference is calculated using
+$$
+    P^\text{MESI}_i - P^\text{MESI (advanced)}_i
+$$
+where $ P^\text{<protocol>}_i $ is the value for each protocol, for each
+parameter value $i$ in each plot. A negative difference means that the advanced
+version of the MESI protocol required more cycles and a positive difference means
+that MESI was slower than the advanced version.
+
+We see the same overall trend when shifting the cache size, associativity and block size
+as in the previous section, see Figures~\ref{fig:cache_size_advanced},
+\ref{fig:associativity_advanced} and \ref{fig:block_size_advanced}. There is more
+bars in favor of the advanced version of the MESI protocol.
+
 
 \begin{figure}[H]
     \centering
@@ -221,30 +238,6 @@ updates for the Dragon protocol for all benchmarks.
     \centering
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
-        \incfig{block_size_blackscholes_advanced}
-        \caption{Blackscholes.}\label{fig:block_size_blackscholes_advanced}
-    \end{subfigure}%
-    \hfill
-    \begin{subfigure}[b]{0.33\textwidth}
-        \centering
-        Block size\par\medskip
-        \incfig{block_size_bodytrack_advanced}
-        \caption{Bodytrack.}\label{fig:block_size_bodytrack_advanced}
-    \end{subfigure}%
-    \hfill
-    \begin{subfigure}[b]{0.33\textwidth}
-        \centering
-        \incfig{block_size_fluidanimate_advanced}
-        \caption{Fluidanimate.}\label{fig:block_size_fluidanimate_advanced}
-    \end{subfigure}
-    \hfill
-    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}\label{fig:block_size_advanced}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.33\textwidth}
-        \centering
         \incfig{associativity_blackscholes_advanced}
         \caption{Blackscholes.}\label{fig:associativity_blackscholes_advanced}
     \end{subfigure}%
@@ -267,6 +260,30 @@ updates for the Dragon protocol for all benchmarks.
 
 \begin{figure}[H]
     \centering
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{block_size_blackscholes_advanced}
+        \caption{Blackscholes.}\label{fig:block_size_blackscholes_advanced}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        Block size\par\medskip
+        \incfig{block_size_bodytrack_advanced}
+        \caption{Bodytrack.}\label{fig:block_size_bodytrack_advanced}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.33\textwidth}
+        \centering
+        \incfig{block_size_fluidanimate_advanced}
+        \caption{Fluidanimate.}\label{fig:block_size_fluidanimate_advanced}
+    \end{subfigure}
+    \hfill
+    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}\label{fig:block_size_advanced}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
     \begin{subfigure}[b]{0.5\textwidth}
         \centering
         \incfig{invalidations_advanced}
@@ -279,7 +296,7 @@ updates for the Dragon protocol for all benchmarks.
         \caption{Bus traffic.}\label{fig:bus_traffic_advanced}
     \end{subfigure}%
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:inv_bus_advanced}
+    \caption{The graphs show the number of invalidations or bus updates and the amount of bus traffic}\label{fig:inv_bus_advanced}
 \end{figure}
 
 \begin{figure}[H]
@@ -296,5 +313,5 @@ updates for the Dragon protocol for all benchmarks.
         \caption{Total of shared memory accesses.}\label{fig:total_shared_accesses_advanced}
     \end{subfigure}%
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:accesses_advanced}
+    \caption{The graphs show the number of private and shared memory accesses.}\label{fig:accesses_advanced}
 \end{figure}

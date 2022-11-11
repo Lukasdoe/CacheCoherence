@@ -172,12 +172,11 @@ However, this diagram is a bit different from the transition diagram found on
 Wikipedia~\cite{mesi_wiki}, because it only describes our first transition phase.
 The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared
 state (S), which cannot be found Figure~\ref{fig:mesi}.
-
-This among all other transitions will be described in this section.
+This among other non-trivial transitions will be described in this section.
 
 % TODO: describe cache hit for I.
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{mesi}
     \caption{MESI. The step phase of the update cycle.}\label{fig:mesi}
@@ -201,7 +200,7 @@ A \texttt{BusRdXMem} bus transaction will be issued.
 Other cores that are snooping will notice this.
 They will invalidate their cache lines and transition to I.
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{mesi_snoop}
     \caption{MESI. The snoop phase of the update cycle.}
@@ -212,22 +211,24 @@ They will invalidate their cache lines and transition to I.
 % When a read hit occurs, no state transition will occur and no bus transaction will be issued.
 % Thus, the state will stay in S.
 
-% $S \to M$.
-% When a cache hit occurs while a core is writing to a cache line that is in S, a transition to M will occur and a \texttt{BusRdXMem} bus transaction will be issued.
-% Other cores that are snooping will notice this.
-% They will invalidate their cache lines and transition to I.
+$S \to M$.
+When a cache hit occurs while a core is writing to a cache line that is in S, a transition to M will occur and a \texttt{BusRdXMem} bus transaction will be issued.
+Other cores that are snooping will notice this.
+They will invalidate their cache lines and transition to I.
 
 % $E \to E$.
 % When a cache hit occurs while a core is reading to a cache line that is in E, the cache line will remain in E and no bus transaction will be issued.
 
-% $E \to M$.
-% When a cache hit occurs while a core is writing to a cache line that is in E, a transition to M will occur but no bus transaction since the core can be sure that has the only copy of the cache line.
+$E \to M$.
+When a cache hit occurs while a core is writing to a cache line that is in E, a
+transition to M will occur but no bus transaction since the core can be sure that
+has the only copy of the cache line.
 
 % $M \to M$.
 % When a cache hit occurs while a core is writing or reading to a cache line that is in M, the cache line will remain in M and no bus transaction will be issued since it can be sure that no other core has a copy of the cache line.
 
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{mesi_after_snoop}
     \caption{MESI. The after snoop phase of the update cycle.}
@@ -251,13 +252,11 @@ This is to make sure that the correct transitions occur when dealing with shared
 Since the Dragon protocol has two shared states, the transition diagram is more complicated.
 Like the MESI protocol, our implementation does not line up directly with the transition diagram shown on Wikipedia~\cite{dragon_wiki}.
 One noticeable difference is that there are no transitions from an ``invalid'' state to state Sc, Sm and M.
-Like the previous section all transitions will be described in this section.
-Even if ``invalid'' is not a state in the Dragon protocol, ``Any'' will denote a cache line that is not currently in E, Sc, Sm or M.
-Thus, the cache line is guaranteed to miss in this ``state''.
+Like the previous section all non-trivial transitions will be described in this section.
+The ``Any'' state will denote a cache line that is not currently in E, Sc, Sm or M and
+an access to a cache line in this state is guaranteed to miss.
 
-% TODO: cache-to-cache
-
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{dragon}
     \caption{Dragon. The step phase of the update cycle.}
@@ -272,36 +271,57 @@ No other core has a copy of the cache line, so the cache line will remain in sta
 $Any \to Sc$.
 When a cache miss occurs while a core is reading to a cache line the cache line will enter state E.
 A bus transaction will be issued, telling other cores that a read has happened.
-At least one other core has a copy of the cache line, so these cores will during the snoop phase notice the bus transaction, and change their states accordingly.
+At least one other core has a copy of the cache line, so these cores will during the snoop phase notice
+the bus transaction, and update the bus transaction to \texttt{BusRdShared}. The core that issued
+the read, will in the after snoop phase transition from state E to state Sc because of this bus transaction.
 
 $Any \to M$.
-When a cache miss occurs while a core is writing to a cache line the cache line will enter state M.
-A bus transaction will be issued, telling other cores that a read has happened.
-No other core has a copy of the cache line, so the cache line will remain in state M.
+When a cache miss occurs while a core is writing to a cache line the cache line will enter state E.
+A \texttt{BusUpdMem} bus transaction will be issued, telling other cores that a write has happened.
+No other core shares the same cache line, so the cache line will transition to state M in the after
+snoop phase as the bus transaction does not change, see Figure~\ref{fig:dragon_after_snoop}.
 
 $Any \to Sm$.
-When a cache miss occurs while a core is writing to a cache line the cache line will enter state M.
-A bus transaction will be issued, telling other cores that a write has happened.
-At least one other core has a copy of the cache line, so these cores will during the snoop phase notice the bus transaction.
-and change their states to Sc.
-Any cache line that was in Sm or M will have to propagate the data.
-This is represented as a penalty where all cores are stalled as no data is transmitted.
+When a cache miss occurs while a core is writing to a cache line the cache line will enter state E.
+A \texttt{BusUpdMem} bus transaction will be issued, telling other cores that a write has happened.
+At least one other core has a copy of the cache line. If a core's cache line is currently in either
+state M or Sm, it will during the snoop phase, transition to state Sc and update the bus transaction to
+a \texttt{BusUpdShared}, see Figure~\ref{fig:dragon_snoop}. They will have to propagate their data.
+This is represented as a penalty where all cores are stalled as no data is transmitted. The core that
+issued the write will transition from state E to state Sm in the after snoop phase, because of the
+\texttt{BusUpdShared}.
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{dragon_snoop}
     \caption{Dragon. The snoop phase of the update cycle.}
     \label{fig:dragon_snoop}
 \end{figure}
 
-$E \to M$
+$Sc \to M$,
+$Sm \to M$.
+When a cache hit occurs while a core is writing to a cache line that is in state Sc or Sm, the cache line
+will transition to state M and issue a \texttt{BusUpdMem} transaction. No other core is sharing the
+cache line anymore, so no core will update the bus transaction to \texttt{BusUpdShared}. Because of
+this, no transition will happen in the after snoop phase. The bus will be explicitly cleared since
+there is no need to update other cache lines.
 
-$Sc \to M$
+$Sc \to Sm$.
+When a cache hit occurs while a core is writing to a cache line that is in state Sc, the cache line
+will transition to state M and issue a \texttt{BusUpdMem} transaction. Any core that is in state M
+will transition to state Sc during the snoop phase as a result of the bus transaction. It will update
+the bus transaction to \texttt{BusUpdShared}. This will allow the cache line that issued the write to
+transition to state Sm in the after snoop phase.
 
-$Sm \to M$
+$Sm \to Sm$
+When a cache hit occurs while a core is writing to a cache line that is in state Sm, the cache line
+will transition to state M and issue a \texttt{BusUpdMem} transaction. There are at least one other
+core sharing the same cache line which is guaranteed to be in state Sc. During the snoop phase, this
+cache line will update the bus transaction to \texttt{BusUpdShared}, so that the cache line that issued
+the write can go back to state Sm.
 
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \incfig{dragon_after_snoop}
     \caption{Dragon. The after snoop phase of the update cycle.}
@@ -319,6 +339,11 @@ $Sm \to M$
 
 % $Sm \to Sm$.
 % When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
+
+The remaining states are rather trivial, e.g. will not issue a bus transaction and the cache line will remain
+in the same state. Whenever the bus transaction is changed to a shared bus transaction (\texttt{BusRdShared}
+and \texttt{BusUpdShared}) the remaining cycles that the cores have to wait will be reduced to symbolize
+the cache-to-cache transfer.
 
 \subsection{Testing}
 To verify that all state transitions work, a set of unit tests for the MESI protocol and the Dragon protocol has been constructed.
