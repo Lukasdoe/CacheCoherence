@@ -170,8 +170,8 @@ def invalidations(advanced=False):
 
 if __name__ == "__main__":
     advanced = True
-    # cache_size(advanced)
-    # block_size(advanced)
-    # associativity(advanced)
+    cache_size(advanced)
+    block_size(advanced)
+    associativity(advanced)
     bus_traffic(advanced)
     invalidations(advanced)

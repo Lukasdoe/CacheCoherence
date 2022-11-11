@@ -4,7 +4,29 @@ import itertools
 import os
 
 
-name = "associativity.csv"
+# associativity
+# name = "associativity.csv"
+# cache_sizes = ["4096"]
+# associativities = ["1", "128"]
+# block_sizes = ["32"]
+
+# cache size
+# name = "cache_size.csv"
+# cache_sizes = ["1024", "8192"]
+# associativities = ["2"]
+# block_sizes = ["32"]
+
+# block size
+# name = "block_size.csv"
+# cache_sizes = ["4096"]
+# associativities = ["2"]
+# block_sizes = ["16", "64"]
+
+# default
+# name = "default.csv"
+# cache_sizes = ["4096"]
+# associativities = ["2"]
+# block_sizes = ["32"]
 
 path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath(os.path.join(path, ".."))
@@ -18,26 +40,6 @@ out_path = os.path.join(data_path, name)
 
 protocols = ["mesi", "dragon", "mesi-advanced"]
 inputs = [blackscholes_path, bodytrack_path, fluidanimate_path]
-
-# associativity
-cache_sizes = ["4096"]
-associativities = ["1", "128"]
-block_sizes = ["32"]
-
-# cache size
-# cache_sizes = ["1024", "8192"]
-# associativities = ["2"]
-# block_sizes = ["32"]
-
-# block size
-# cache_sizes = ["4096"]
-# associativities = ["2"]
-# block_sizes = ["16", "64"]
-
-# default
-# cache_sizes = ["4096"]
-# associativities = ["2"]
-# block_sizes = ["32"]
 
 a = [protocols, inputs, cache_sizes, associativities, block_sizes]
 all_options = list(itertools.product(*a))
