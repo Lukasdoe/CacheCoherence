@@ -21,16 +21,16 @@ Each plot contains two subplots, one that shows the absolute values for both the
 This is useful to distinguish the overall pattern when varying a parameter as well as see which of the protocols perform best.
 The difference is always calculated like
 $$
-P^\text{MESI}_i - P^\text{Dragon}_i
+    P^\text{MESI}_i - P^\text{Dragon}_i
 $$
 where $ P^\text{<protocol>}_i $ is the value for each protocol, for each parameter value $i$ in each plot.
 Since it takes quite some time to run each benchmark trace, there will only be two shifts for each parameter.
-This already constitutes a large number of tests, 
+This already constitutes a large number of tests,
 $$
-\underbrace{2}_\text{2 protocols} \times \underbrace{3}_\text{3 traces} \times \underbrace{2}_\text{2 shifts} \times \underbrace{3}_\text{3 parameters} + \underbrace{3 \times 2}_\text{default} = 42
+    \underbrace{2}_\text{2 protocols} \times \underbrace{3}_\text{3 traces} \times \underbrace{2}_\text{2 shifts} \times \underbrace{3}_\text{3 parameters} + \underbrace{3 \times 2}_\text{default} = 42
 $$
 without accounting for the advanced tests.
-Figure \ref{fig:cache_size} shows the performance for each protocol when varying the cache size.
+Figure~\ref{fig:cache_size} shows the performance for each protocol when varying the cache size.
 
 \begin{figure}[H]
     \centering
@@ -60,7 +60,7 @@ Figure \ref{fig:cache_size} shows the performance for each protocol when varying
     \label{fig:cache_size}
 \end{figure}
 
-We can see that ... 
+We can see that ...
 
 
 \begin{figure}[H]
@@ -258,4 +258,3 @@ We can see that ...
     \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}
     \label{fig:}
 \end{figure}
-

@@ -1,11 +1,12 @@
 \section{Method}
-The following section describes how the different components work as well as a more detailed view of how the MESI and Dragon protocols work.
+The following section describes how the different components of the simulator work. It also
+includes a more detailed description of the the MESI and Dragon protocols.
 
 \subsection{Components}
-Figure \ref{fig:overview} shows an overview of how the different components in the simulation are
-structured. We can see that a loader component unpacks a zip archive and passes each file as a
-record stream to a corresponding core in the system. Each core has one cache each and is connnected
-to the bus.
+Figure~\ref{fig:overview} shows an overview of how the different components in the simulation are
+structured. A loader component unpacks a zip archive and passes each file as a
+\emph{record} stream to a corresponding core in the system. Each core has one L1 cache which is connected
+to the central, shared bus.
 
 \begin{figure}[ht]
     \centering
@@ -14,17 +15,15 @@ to the bus.
     \label{fig:overview}
 \end{figure}
 
-
-
 \subsubsection{Record}
 
-A record consists of a label and a value.  During the initialization of the simulation, a loader
-unpacks the passed zip archive and converts each file contained in the zip archive to a record
-stream.  Given the following line in one such unpacked file
+A record consists of a label and a value. During the initialization of the simulation, the loader
+decompresses and unpacks the input zip archive and converts each contained file to a stream of
+records. Given the following line in one such an input file
 \begin{lstlisting}
 0 0x817ae8
-\end{lstlisting}
-a record will be created in the following form
+\end{lstlisting}%
+a record will be created in the following form:
 \begin{lstlisting}
 Record {
     label: Label::Load,
@@ -32,21 +31,35 @@ Record {
 }
 \end{lstlisting}
 
-
 \subsubsection{System}
-The system keeps the state of all the cores and make sure that each core is updated.
-The system will create as many cores as needed to satisfy each file unpacked from the zip archive.
-The update step for each core consists of three stages: \texttt{step}, \texttt{snoop} and \texttt{after\_snoop}.
-The \texttt{step} stage parses the new instruction into a record and updates the state given the record.
-The \texttt{snoop} stage will snoop the bus.
-If the bus currently have an active task and the task's issuer is not the core that is snooping the core may update its state given the active task and current state for that cache line.
-The \texttt{after\_snoop} stage is a cleanup stage done after the snooping stage.
-It consists of changing the state of a cache line depending on the outcome of the snoop stage, that is, if it turns out that the cache line should be shared.
-The update is structured this way to avoid race conditions between each intermediate state.
 
+The system maintains the overall state of all the cores and updates the cores' internal states every
+cycles. During creation, the system initializes a new core for each supplied record stream.
+
+Updating the cores' internal state consists of three distinct stages: \texttt{step}, \texttt{snoop}
+and \texttt{after\_snoop}. The execution of these stages is synchronized between cores, meaning that
+all cores have to be finished with one stage until any core can enter the next stage.
+
+The \texttt{step} stage lets the core parse the next instruction from the record steam (if the core
+is currently not busy) and updates the core's cache's internal state appropriately, without any
+information of the other caches. This means that e.g. all bus reads are expected to result in the
+``exclusive'' state.
+
+The \texttt{snoop} stage lets the core's cache snoop on the bus.
+If the bus currently has an active task from one of the other cores, the cache may update its
+internal state given the active task and current state of the affected cache line. This stage is
+responsible for altering the current bus transaction if e.g.\ the requested address is shared, to
+inform the requesting cache of its state.
+
+The \texttt{after\_snoop} stage is a cleanup stage that is executed after the snooping stage.
+It is required, because caches might have assumed wrong conditions during the initial \texttt{step}
+phase. These caches may use this phase to update their internal state based on their (now altered)
+active bus transaction. This stage e.g.\ turns a previously wrongly assumed ``exclusive'' state to
+the ``shared'' state (MESI) if the bus transaction was changed by another core's cache to be a
+shared read.
 
 \subsubsection{Core}
-The core keeps the state of the cache and all the records.
+The core maintains the state of its L1 cache and its record stream.
 
 \subsubsection{Cache}
 The cache keeps the state of each cache line, the corresponding LRU value for each cache line, which
@@ -113,9 +126,9 @@ update cycle the bus proceeds to advance the bus transaction if there is one.
 
 \subsubsection{Protocol}
 \label{sec:sub_protocol}
-The protocol is implemented as a trait, where a trait defines shared behaviour.  This is very
+The protocol is implemented as a trait, where a trait defines shared behavior.  This is very
 similar to how interfaces work in other languages than Rust, with some minor differences.  For
-example, traits cannot have fields.  The shared behaviour for protocol trait is defined like:
+example, traits cannot have fields.  The shared behavior for protocol trait is defined like:
 
 \begin{lstlisting}
 read()
@@ -138,7 +151,7 @@ and operations are for example invoked like
 protocol.snoop(...)
 \end{lstlisting}
 
-This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behaviour for the invoked operation.
+This is really useful as the cache does not need to know which protocol is used, but relying on the fact that the underlying protocol has some defined behavior for the invoked operation.
 In every update cycle, as described earlier, there are three phases
 
 \begin{enumerate}
@@ -148,33 +161,33 @@ In every update cycle, as described earlier, there are three phases
 \end{enumerate}
 
 \subsection{Protocol}
-Like described in section \ref{sec:sub_protocol}, each protocol needs to implement a set of method
+Like described in section~\ref{sec:sub_protocol}, each protocol needs to implement a set of method
 to satisfy the trait.  The following two sub sections will go in depth how the MESI protocol and
 Dragon protocol implements these, as well as show the state diagrams that come up.
 
 \subsubsection{MESI}
 
-A transition diagram for our implementation of the processor initiated transitions for the MESI protocol can be found in Figure \ref{fig:mesi}.
+A transition diagram for our implementation of the processor initiated transitions for the MESI protocol can be found in Figure~\ref{fig:mesi}.
 However, this is a bit different from the transition diagram found on Wikipedia \cite{mesi_wiki}.
-The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared state (S), which cannot be found Figure \ref{fig:mesi}.
+The transition diagram found on Wikipedia has a transition from the invalid state (I) to the shared state (S), which cannot be found Figure~\ref{fig:mesi}.
 This among all other transistions will be described in this section.
 
-TODO: describe cache hit for I. 
+TODO: describe cache hit for I.
 
 
 \begin{figure}[H]
     \centering
     \incfig{mesi}
-    \caption{Mesi. The step phase of the update cycle.}
+    \caption{MESI. The step phase of the update cycle.}
     \label{fig:mesi}
 \end{figure}
 
-$I \to S$. 
-The transition from I to S is instead modeled using the step phase (see Figure \ref{fig:mesi}) and the after snoop phase (see Figure \ref{fig:mesi_after_snoop}).
-When a cache miss occurs, the cache line is moved from invalid (I) to exclusive (E) as seen in Figure \ref{fig:mesi}.
+$I \to S$.
+The transition from I to S is instead modeled using the step phase (see Figure~\ref{fig:mesi}) and the after snoop phase (see Figure~\ref{fig:mesi_after_snoop}).
+When a cache miss occurs, the cache line is moved from invalid (I) to exclusive (E) as seen in Figure~\ref{fig:mesi}.
 This will issue a bus transaction as a miss occured.
 Another core that is currently holding the same cache line will snoop the bus transaction and change the transaction to signal that it is currently holding the same cache line.
-The core that issued the bus transaction will in the after snoop phase acknowledge the shared signal and change its state to S, see the transistion from E to S in Figure \ref{fig:mesi_after_snoop}.
+The core that issued the bus transaction will in the after snoop phase acknowledge the shared signal and change its state to S, see the transistion from E to S in Figure~\ref{fig:mesi_after_snoop}.
 
 $I \to E$.
 When a cache miss occurs, the core will transistion to E.
@@ -182,7 +195,7 @@ It will issue a bus transaction, but since no other core is holding the same cac
 
 $I \to M$.
 When a cache write miss occurs the core must first fetch the data due to write-allocate.
-A write-allocate is simulated by stalling for the standard penalty amount of a read miss, while transitioning the cache line to state M as seen in Figure \ref{fig:mesi}.
+A write-allocate is simulated by stalling for the standard penalty amount of a read miss, while transitioning the cache line to state M as seen in Figure~\ref{fig:mesi}.
 A \texttt{BusRdXMem} bus transaction will be issued.
 Other cores that are snooping will notice this.
 They will invalidate their cache lines and transition to I.
@@ -190,7 +203,7 @@ They will invalidate their cache lines and transition to I.
 \begin{figure}[H]
     \centering
     \incfig{mesi_snoop}
-    \caption{Mesi. The snoop phase of the update cycle.}
+    \caption{MESI. The snoop phase of the update cycle.}
     \label{fig:mesi_snoop}
 \end{figure}
 
@@ -216,11 +229,11 @@ When a cache hit occurs while a core is writing or reading to a cache line that 
 \begin{figure}[H]
     \centering
     \incfig{mesi_after_snoop}
-    \caption{Mesi. The after snoop phase of the update cycle.}
+    \caption{MESI. The after snoop phase of the update cycle.}
     \label{fig:mesi_after_snoop}
 \end{figure}
 
-From a bus transaction, a cache line can either go to S or I by looking at the Figure \ref{fig:mesi_snoop}.
+From a bus transaction, a cache line can either go to S or I by looking at the Figure~\ref{fig:mesi_snoop}.
 When a \texttt{BusRdMem} occurs the cache line will go to state S, as it knows that some other core has currently accessed the same cache line.
 This will as mentioned happend in the snoop phase.
 The core that is changing the cache line to S will also change the type of the bus transaction to allow the scenario described for transition ($I \to S$).
@@ -231,7 +244,7 @@ When a cache line in M is evicted or invalidated, it must be flushed.
 A flush will result in stalling all cores until the operation is complete.
 
 \subsubsection{Dragon}
-A transition diagram for our implementation of the processor initiated transitions for the Dragon protocol can be found in Figure \ref{fig:dragon}.
+A transition diagram for our implementation of the processor initiated transitions for the Dragon protocol can be found in Figure~\ref{fig:dragon}.
 Compared to the implementation of the MESI protocol, the implementation of the Dragon is more impacted by the after snoop phase.
 This is to make sure that the correct transitions occur when dealing with shared cache lines.
 Since the Dragon protocol has two shared states, the transition diagram is more complicated.
@@ -319,7 +332,3 @@ Only one core is used in these tests.
 Thus, this should in principle verify that the cache implementation is correct, not neccesarily that the cache coherence implementation is correct.
 
 TODO: make sure the tests are working
-
-
-
-

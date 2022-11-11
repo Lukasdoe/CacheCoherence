@@ -1,21 +1,21 @@
 \section{Introduction}
 
-%This report will shed some lights on how cache coherence 
+%This report will shed some lights on how cache coherence
 This report provides the details of how a cache coherence simulator is implemented and shows how three different benchmark traces compare against each other given a certain configuration of the simulator.
-A cache simulator will try to mimic the behaviour of how a real cache would act when presented with a program.
+A cache simulator will try to mimic the behavior of how a real cache would act when presented with a program.
 However, there is no need to execute a certain program every time the cache simulator is run.
-Rather, storing the traces of which memory instructions were used in which order would be enough and will reduce the execution time significantly. 
-A cache coherence simulator is not only concerned with simulating the behaviour of a cache, but also the interaction between different caches when there is a coherence protocol in place.
+Rather, storing the traces of which memory instructions were used in which order would be enough and will reduce the execution time significantly.
+A cache coherence simulator is not only concerned with simulating the behavior of a cache, but also the interaction between different caches when there is a coherence protocol in place.
 A coherence protocol is a protocol that states how two different caches in a shared system accesses shared data. Specifically, two caches must never see different values for the same shared data.
 Two cache coherence protocols will be used in the implementation described in this report: MESI and Dragon.
 The offer a different take on how to deal with shared data and both has their advantages and disadvantages.
 The benchmarks are from the PARSEC suite and are the following:
 \begin{enumerate}
-    \item \textbf{blackscholes}. Option pricing with Blach-Scholes Partial Differnetial Equation.
+    \item \textbf{blackscholes}. Option pricing with the Black-Scholes Differential Equation.
     \item \textbf{bodytrack}. Body tracking of a person.
-    \item \textbf{fluidanimate}. Fluid dynamics for animation purposes with Smoothed Particle Hydrodynamics (SPH) method.
+    \item \textbf{fluidanimate}. Fluid dynamics for animation purposes using the Smoothed Particle Hydrodynamics (SPH) method.
 \end{enumerate}
-The trace of each benchmark contains has the form shown in Listing \ref{lst:trace}
+The trace of each benchmark contains has the form shown in Listing~\ref{lst:trace}
 
 \begin{lstlisting}[label=lst:trace]
 <Label> <Address>
@@ -26,28 +26,28 @@ A label can have the values 0 (load), 1 (store) and 2 (other). The load and stor
 The other instruction is all other kinds of operations.
 In this simulator, such instructions will be interpreted as a stall in each core for the value specified in the address field.
 Each benchmark contains traces for four different caches.
-This, there will be a different sequence of instructions in the form of Listing \ref{lst:trace} for every cache. 
-As the simulator is concerned about simulating the behaviour of each cache with respect to some cache coherence protocol, actual data is unnecessary.
+This, there will be a different sequence of instructions in the form of Listing~\ref{lst:trace} for every cache.
+As the simulator is concerned about simulating the behavior of each cache with respect to some cache coherence protocol, actual data is unnecessary.
 The cache is only concerned what slots the data would have occupied, hence only the address field for each trace.
 
 
-The implementation should result in an executable called \texttt{coherence} with a couple of input parameters. Listing \ref{lst:program} shows how to execute the binary
+The implementation should result in an executable called \texttt{coherence} with a couple of input parameters. Listing~\ref{lst:program} shows how to execute the binary
 \begin{lstlisting}[label=lst:program]
 coherence <PROTOCOL> <INPUT_FILE> <CACHE_SIZE> <ASSOCIATIVITY> <BLOCK_SIZE>
 \end{lstlisting}
 The cache size and block size are specified in bytes.
-The default configuration is shown in Listing \ref{lst:default}.
+The default configuration is shown in Listing~\ref{lst:default}.
 \begin{lstlisting}[label=lst:default]
-coherence <PROTOCOL> <INPUT_FILE> 4096 2 32 
+coherence <PROTOCOL> <INPUT_FILE> 4096 2 32
 \end{lstlisting}
 The traces are rather long and may take a couple of minutes to run.
 We have access to a server that can assist us in running the benchmarks.
 However, while each simulation taking quite some time we will start with running the default configuration for each trace and protocol.
 Whichever configuration has the best performance will be our baseline where we will try to optimize the parameter settings of the cache size, associativity and the block size.
 
-In addition to measuring the performance of the different traces with respect to MESI and Dragon, an improved version of the Dragon protocol will also be used in the benchmarks. 
+In addition to measuring the performance of the different traces with respect to MESI and Dragon, an improved version of the Dragon protocol will also be used in the benchmarks.
 The improved version will optimize a certain aspect of the Dragon protocol with the hopes that the execution time will be faster.
-The improved version of the Dragon protocol is described in Section \ref{sec:advanced_task}.
+The improved version of the Dragon protocol is described in Section~\ref{sec:advanced_task}.
 This is an advanced task beyond the scope of getting the cache coherence simulator in place.
 
 To be able to measure the performance, the following statistic should be the output of the program
@@ -55,93 +55,91 @@ To be able to measure the performance, the following statistic should be the out
     \item Overall execution cycles
     \item Distribtion of private data accesses and shared data accesses.
     \item For each core
-    \begin{enumerate}
-        \item Number of cycles spent processing other instructions.
-        \item Number of load and store instructions.
-        \item Number of idle cycles, that is, cycles the core has to wait in order for the cache to complete its operations.
-        \item Cache miss rate
-    \end{enumerate}
+          \begin{enumerate}
+              \item Number of cycles spent processing other instructions.
+              \item Number of load and store instructions.
+              \item Number of idle cycles, that is, cycles the core has to wait in order for the cache to complete its operations.
+              \item Cache miss rate
+          \end{enumerate}
     \item For the bus
-    \begin{enumerate}
-        \item Amount of data traffic in bytes.
-        \item Number of invalidations or updates
-    \end{enumerate}
+          \begin{enumerate}
+              \item Amount of data traffic in bytes.
+              \item Number of invalidations or updates
+          \end{enumerate}
 \end{enumerate}
 
 
 
 \subsection{Assumptions}
 
-There are a couple of assumptions that need to be made about the behaivour of the simulator. There are a couple of assumptions clearly stated in the project description and we have further expanded the list of assumptions along the way. The core assumptions stated in the projcet description are the following:
+In order to derive a clear specification of the behavior of the cache coherence simulator, a
+couple of assumptions need to be made. Therefore, the assumptions stated in the project description
+have been expanded with additional assumptions which remove any undefined behavior.
 
+The project description lists the following assumptions to specify the core behavior of the simulator:
 \begin{enumerate}
-    \item Memory address is 32-bit. 
+    \item Memory addresses are 32-bit wide.
     \item The word size is 4 bytes.
-    \item A memory reference accesses 32-bit (1 word) of data.
+    \item A memory reference points to 32-bit (1 word) of data in memory.
     \item Only the data cache will be modeled.
     \item Each processor has its own L1 data cache.
-    \item L1 data cache uses write-back, write-allocate policy and LRU replacement policy.
-    \item L1 data caches are kept coherent using cache coherence protocol.
-    \item Initially all the caches are empty.
-    \item The bus uses first come first serve arbitration policy when multiple processor attempt bus
-          transactions simultaneously. Ties are broken arbitrarily.
+    \item The L1 data cache uses a write-back, write-allocate policy and an LRU replacement policy.
+    \item The L1 data caches are kept coherent using a cache coherence protocol.
+    \item All the caches are empty on the start of the simulation.
+    \item The bus uses the first come first serve (FCFS) arbitration policy when multiple processors
+          attempt to schedule bus transactions simultaneously. Ties are broken arbitrarily.
     \item The L1 data caches are backed up by main memory --- there is no L2 data cache.
-    \item L1 cache hit is 1 cycle. Fetching a block from memory to cache takes additional 100 cycles.
-          Sending a word from one cache to another (e.g., BusUpdate) takes only 2 cycles.
+    \item An L1 cache hit is 1 cycle. Fetching a block from memory to cache takes additional 100 cycles.
+          Sending a word from one cache to another (e.g. BusUpdate) takes only 2 cycles.
 \end{enumerate}
 
-Further, we have to make some additional assumptions
-
+The following assumptions have been added to further specify the behavior of our simulator:
 \begin{enumerate}
-    \item Instruction scheduling happens instantly => the clk cycle that a "other" is scheduled is
-          already the first cycle in which it is reduced.
-    \item Writing always takes one cycle to hit the cache.
-          \begin{enumerate}
-              \item Write Hit => 1 cycle delay
-              \item Write Miss => 1 + (cache\_miss\_penalty) delay
-          \end{enumerate}
-    \item A bus update always only transmits a single word, bus flushes always transmit a whole block.
-          Flushes always also go to main memory and therefore require at least 100 cycles. Updates can go to
-          other caches only, making them faster with about 2 cycles.
-    \item Dragon protocol: Bus flushes are only required for write backs. As long as the copy stays in
-          the cache, every "flush" in the diagram is replaced with a shared update action. No data is written
-          to main memory.
-    \item Cache write-allocate: every write checks if the address is currently in cache. If not, it
-          schedules a load and restarts the check afterwards. Only if the check is successful (hit), the write
-          is attempted. If another cache invalidates the cache line between the read and the write, then the
-          read has to be repeated.
-    \item Bus wait cycles are only counted beginning in the clock cycle AFTER the task was put on the
-          bus. This means that a writeback requires in total 101 cycles until the next action can be
-          performed: 1 cycle to schedule the writeback and 100 cycles for the bus to finish the writeback to
-          memory.
-    \item Caches block during their own bus transactions => the cache waits until its bus transaction is
-          finished until it commences with further steps (this is required to restart the transaction in case
-          something fails)
+    \item Instruction scheduling happens instantly. This means that scheduling an ``other''-instruction
+          and executing it for the first cycles happens in the same cycle.
+    \item Writing to an addresses always takes at least one cycle to hit the cache (write-allocate
+          policy). This means that a write hit incurs a delay of one cycle, a write miss the delay of one
+          cycle with the additional cache miss penalty.
+    \item A bus update always transmits a single word (32-bit), bus flushes always
+          transmit the full cache line (one block).
+    \item A bus flush always updates the corresponding block in main memory and therefore requires at
+          least 100 cycles. Updates can target other caches only, making them faster with a minimum time of 2 cycles.
+    \item The time a scheduled bus transaction takes is counted beginning in the clock cycle \emph{after} the task was put on the
+          bus. This means that a write-back requires a total of 101 cycles until the next action can be
+          performed. This delay consists of one cycle to schedule the write-back flush transaction and 100
+          cycles for the bus to finish the flush transaction to main memory.
+    \item Caches block during their own bus transactions. The cache waits for its own bus transaction
+          to finish before it commences finishing the current instruction. This behavior makes it simple to
+          restart the transaction in case it cannot be executed successfully.
     \item Other caches may listen to the bus during flushes to main memory and can therefore directly
-          update / read their new value. This means that a bus read that causes a flush (MESI) only takes the
-          time that is required to flush to main memory (which is > than shared read time).
-    \item Our MESI is Illinois MESI.
-    \item Dragon Protocol: Replacement of Sc blocks is not broadcast
-    \item Dragon Protocol: All cache line states are eligible for cache-to-cache data sharing. This
-          means that reads from memory are only required if none of the existing caches holds the requested
-          tag.
-    \item Dragon Protocol: (From Sm, Sc) On a PrWr, a BusUpd is scheduled. If no other cache responds to
-          the update then the bus is cleared in the same cycle. This way, the cache can check if other caches
-          still hold the value and if not, only block the bus for one cycle.
-    \item If a valid version of the cache line is in the cache (hit), only single words are updated /
-          read / write. If there is not valid version in the cache (miss) or invalid, the full cache line
-          (block\_size) is transmitted via the bus. For write-backs, also the full cache line is transmitted.
-    \item A cache hit occurs if the cache contains a block that contains the requested address. It is
-          not affected by the protocol state of the line. This means that accesses to invalidated cache lines
-          are also counted as cache hits.
+          update their stored value. This means that a bus read that causes a flush (for the MESI protocol) only takes the
+          time that is required to flush to main memory (which is greater than shared read time).
+    \item A \emph{cache hit} occurs if the requested address lies in a block that is currently stored in the cache. It is
+          not affected by the protocol's state of the line. This means that accesses to invalidated cache lines
+          are also counted as cache hits, even though they incur bus transactions to read the corresponding
+          cache line.
+    \item Special assumptions for operation under the Dragon cache coherence protocol:
+          \begin{itemize}
+              \item For the Dragon protocol, bus flushes are only required for write-backs (elimination of an
+                    owned cache block). As long as the copy stays in the cache, every ``flush''
+                    in the original state transition diagram of the Dragon protocol is replaced with a bus update transaction. No
+                    data is written to main memory.
+              \item Replacements of blocks that are in \emph{Shared-Clean} (Sc) state are not broadcast on the bus.
+              \item All cache line states are eligible for cache-to-cache data sharing. This
+                    means that reads from memory are only required if none of the other caches currently holds the requested
+                    address.
+              \item Processor writes schedule a bus update transaction of the affected cache block is in Sc or Sm state. If no
+                    other cache responds to
+                    the update, then the bus is cleared in the same cycle. This way, the cache can check if other caches
+                    still hold the value and if not, only block the bus for one cycle.
+          \end{itemize}
 
 \end{enumerate}
 \subsection{Methodology}
-The cache coherence simulator is implemented using Rust.
-Rust is a compiled language with similar performance to that of C and C++.
-The Rust compiler is very strict and induces a certain coding style that once it compiles, one often can be sure of that unexpected behaviour will not happend.
-While it often is harder to get a prototype working, hopefully less time will be spent on debugging rare edge cases.
+The cache coherence simulator is implemented using the programming language \emph{Rust}.
+Rust is a compiled language with a performance similar to that of C and C++.
+The Rust compiler ensures strict invariants and induces a certain coding style. This additional
+effort results in safer code by preventing common bugs and mistakes. While this means that more time
+has to be spent on getting a prototype working, it reduces the time spent on debugging.
 
-
-Alongside with the cache coherence simulator, unit tests and integration tests will be conducted to ensure the correct behaviour of the simulator.
-
+Alongside with the cache coherence simulator, unit tests and integration tests are conducted to assert the correct behavior of the simulator.
