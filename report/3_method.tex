@@ -208,23 +208,23 @@ They will invalidate their cache lines and transition to I.
     \label{fig:mesi_snoop}
 \end{figure}
 
-$S \to S$.
-When a read hit occurs, no state transition will occur and no bus transation will be issued.
-Thus, the state will stay in S.
+% $S \to S$.
+% When a read hit occurs, no state transition will occur and no bus transaction will be issued.
+% Thus, the state will stay in S.
 
-$S \to M$.
-When a cache hit occurs while a core is writing to a cache line that is in S, a transition to M will occur and a \texttt{BusRdXMem} bus transaction will be issued.
-Other cores that are snooping will notice this.
-They will invalidate their cache lines and transition to I.
+% $S \to M$.
+% When a cache hit occurs while a core is writing to a cache line that is in S, a transition to M will occur and a \texttt{BusRdXMem} bus transaction will be issued.
+% Other cores that are snooping will notice this.
+% They will invalidate their cache lines and transition to I.
 
-$E \to E$.
-When a cache hit occurs while a core is reading to a cache line that is in E, the cache line will remain in E and no bus transaction will be issued.
+% $E \to E$.
+% When a cache hit occurs while a core is reading to a cache line that is in E, the cache line will remain in E and no bus transaction will be issued.
 
-$E \to M$.
-When a cache hit occurs while a core is writing to a cache line that is in E, a transition to M will occur but no bus transaction since the core can be sure that has the only copy of the cache line.
+% $E \to M$.
+% When a cache hit occurs while a core is writing to a cache line that is in E, a transition to M will occur but no bus transaction since the core can be sure that has the only copy of the cache line.
 
-$M \to M$.
-When a cache hit occurs while a core is writing or reading to a cache line that is in M, the cache line will remain in M and no bus transaction will be issued since it can be sure that no other core has a copy of the cache line.
+% $M \to M$.
+% When a cache hit occurs while a core is writing or reading to a cache line that is in M, the cache line will remain in M and no bus transaction will be issued since it can be sure that no other core has a copy of the cache line.
 
 
 \begin{figure}[H]
@@ -308,17 +308,17 @@ $Sm \to M$
     \label{fig:dragon_after_snoop}
 \end{figure}
 
-$M \to M$.
-When a cache hit occurs while a core is writing or reading to a cache line in state M, the cache line will remain in state M and no bus transaction will be issued.
+% $M \to M$.
+% When a cache hit occurs while a core is writing or reading to a cache line in state M, the cache line will remain in state M and no bus transaction will be issued.
 
-$E \to E$.
-When a cache hit occurs while a core is reading to a cache line in state E, the cache line will remain in state E and no bus transaction will be issued.
+% $E \to E$.
+% When a cache hit occurs while a core is reading to a cache line in state E, the cache line will remain in state E and no bus transaction will be issued.
 
-$Sc \to Sc$.
-When a cache hit occurs while a core is reading to a cache line in state Sc, the cache line will remain in state Sc and no bus transaction will be issued.
+% $Sc \to Sc$.
+% When a cache hit occurs while a core is reading to a cache line in state Sc, the cache line will remain in state Sc and no bus transaction will be issued.
 
-$Sm \to Sm$.
-When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
+% $Sm \to Sm$.
+% When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
 
 \subsection{Testing}
 To verify that all state transitions work, a set of unit tests for the MESI protocol and the Dragon protocol has been constructed.

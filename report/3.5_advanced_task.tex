@@ -1,11 +1,11 @@
 \section{Advanced Task}\label{sec:advanced_task}
 While implementing the two previously described protocols, we quickly noticed that both protocols
-leave potential for optimizations. Most of their inefficiencies could be removed be better
+leave potential for optimizations. Most of their inefficiencies could be removed by better
 distributing information between the caches and their controllers. This however introduces more bus
-traffic or more complexity into the processor design. Researchers \cite{read_broadcast_prop1,
+traffic or more complexity into the processor design. Researchers~\cite{read_broadcast_prop1,
     read_broadcast_prop2, read_broadcast_prop3} therefore introduced a new
 optimization that does not introduce additional bus traffic and is of minor complexity. They
-proposed a technique called \emph{Read-Broadcast}\cite{read_broadcast_analysis} for snooping and
+proposed a technique called \emph{Read-Broadcast}~\cite{read_broadcast_analysis} for snooping and
 invalidation based cache coherency systems.
 
 Suppose we have a system with multiple cores that each hold the same block in their caches. We also
@@ -13,7 +13,7 @@ assume that at some point one of the cores initiates a write to this block and t
 invalidation signal to all the other caches. If one of the other cores now were to issue another
 read to the same block, this read would result in a cache miss because of the previously received
 invalidation of the cache block. This read miss occurs for every one of the reading cores that got
-invalidated and all of them need to read the block's value from memory.
+invalidated and all of them would need to re-read the block's value from memory.
 
 In a cache coherency system with the \emph{Read-Broadcast} optimization, all caches snoop on the bus
 line to detect reads of cache blocks they currently hold. If their stored version is marked as

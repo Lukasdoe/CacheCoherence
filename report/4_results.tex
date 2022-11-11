@@ -1,63 +1,67 @@
 \section{Results}
-The following sections will compare the different implementations of the cache coherence protocols.
-The quantiative analysis section will compare the MESI protocol and the Dragon protocol while the advanced section will evaluate the benefits of the optimization of the MESI protocol.
+The following sections will compare the different implementations of the cache
+coherence protocols. The quantitative analysis section will compare the MESI
+protocol and the Dragon protocol while the advanced section will evaluate the
+benefits of the optimization of the MESI protocol.
 
 \subsection{Quantitative Analysis}
 % Benchmarks:
 
-% Numbers are [Cache size, associativity, block_size]
-% All 3 DS: 4KiB, 2, 32 with MESI and Dragon
-% Fastest benchmark with MESI and Dragon:
-%  - 4KiB, 1, 32
-%  - 4KiB, Full, 32
-%  - 1KiB, 2, 32
-%  - 8KiB, 2, 32
-%  - 4KiB, 2, 16
-%  - 4KiB, 2, 64
+% Numbers are [Cache size, associativity, block_size] All 3 DS: 4KiB, 2, 32 with
+% MESI and Dragon Fastest benchmark with MESI and Dragon:
+% - 4KiB, 1, 32
+% - 4KiB, Full, 32
+% - 1KiB, 2, 32
+% - 8KiB, 2, 32
+% - 4KiB, 2, 16
+% - 4KiB, 2, 64
 
-The analysis in this section is based on the default configuration described in the introduction.
-The MESI protocol and the Dragon protocol will be evaluated on every benchmark trace while varying one of either the cache size, the block size or the associativity.
-Each plot contains two subplots, one that shows the absolute values for both the MESI protocol and the Dragon protocol (the bottom subplot) and one that shows the difference of the absolute values between each protocol since they are quite similar (the top subplot).
-This is useful to distinguish the overall pattern when varying a parameter as well as see which of the protocols perform best.
-The difference is always calculated like
+The analysis in this section is based on the default configuration described in
+the project description. The MESI protocol and the Dragon protocol have been evaluated
+on every benchmark trace while varying one of either the cache size, the block
+size or the associativity. Each plot contains two subplots, one that shows the
+absolute values for both the MESI protocol and the Dragon protocol (the bottom
+subplot) and one that shows the relative difference of the absolute values of
+the two protocols (the top subplot), because they are quite similar. This is useful to
+distinguish the overall pattern when varying a parameter as well as see which of
+the protocols performed best. The difference is always calculated using
 $$
     P^\text{MESI}_i - P^\text{Dragon}_i
 $$
-where $ P^\text{<protocol>}_i $ is the value for each protocol, for each parameter value $i$ in each plot.
-Since it takes quite some time to run each benchmark trace, there will only be two shifts for each parameter.
-This already constitutes a large number of tests,
+where $ P^\text{<protocol>}_i $ is the value for each protocol, for each
+parameter value $i$ in each plot. Since it takes quite some time to run each
+benchmark trace, there will only be two shifts for each parameter. This already
+constitutes a large number of tests,
 $$
     \underbrace{2}_\text{2 protocols} \times \underbrace{3}_\text{3 traces} \times \underbrace{2}_\text{2 shifts} \times \underbrace{3}_\text{3 parameters} + \underbrace{3 \times 2}_\text{default} = 42
 $$
-without accounting for the advanced tests.
-Figure~\ref{fig:cache_size} shows the performance for each protocol when varying the cache size.
+without accounting for the advanced tests. Figure~\ref{fig:cache_size} shows
+the performance for each protocol when varying the cache size. A negative
+difference means that the Dragon protocol required more cycles, a positive means
+that MESI was slower than Dragon.
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{cache_size_blackscholes}
-        \caption{Blackscholes.}
-        \label{fig:cache_size_blackscholes}
+        \caption{Blackscholes.}\label{fig:cache_size_blackscholes}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Cache size\par\medskip
         \incfig{cache_size_bodytrack}
-        \caption{Bodytrack.}
-        \label{fig:cache_size_bodytrack}
+        \caption{Bodytrack.}\label{fig:cache_size_bodytrack}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{cache_size_fluidanimate}
-        \caption{Fluidanimate.}
-        \label{fig:cache_size_fluidanimate}
+        \caption{Fluidanimate.}\label{fig:cache_size_fluidanimate}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the size of the cache. There are three different settings for the cache size, 1024 bytes, 4096 bytes and 8192 bytes. The associativity is 2 and the block size is 32 bytes.}
-    \label{fig:cache_size}
+    \caption{The graphs show the number of executed cycles when varying the size of the cache. There are three different settings for the cache size, 1024 bytes, 4096 bytes and 8192 bytes. The associativity is 2 and the block size is 32 bytes.}\label{fig:cache_size}
 \end{figure}
 
 We can see that ...
@@ -68,27 +72,23 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{block_size_blackscholes}
-        \caption{Blackscholes.}
-        \label{fig:block_size_blackscholes}
+        \caption{Blackscholes.}\label{fig:block_size_blackscholes}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Block size\par\medskip
         \incfig{block_size_bodytrack}
-        \caption{Bodytrack.}
-        \label{fig:block_size_bodytrack}
+        \caption{Bodytrack.}\label{fig:block_size_bodytrack}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{block_size_fluidanimate}
-        \caption{Fluidanimate.}
-        \label{fig:block_size_fluidanimate}
+        \caption{Fluidanimate.}\label{fig:block_size_fluidanimate}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}
-    \label{fig:block_size}
+    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}\label{fig:block_size}
 \end{figure}
 
 \begin{figure}[H]
@@ -96,27 +96,23 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{associativity_blackscholes}
-        \caption{Blackscholes.}
-        \label{fig:associativity_blackscholes}
+        \caption{Blackscholes.}\label{fig:associativity_blackscholes}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Associativity\par\medskip
         \incfig{associativity_bodytrack}
-        \caption{Bodytrack.}
-        \label{fig:associativity_bodytrack}
+        \caption{Bodytrack.}\label{fig:associativity_bodytrack}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{associativity_fluidanimate}
-        \caption{Fluidanimate.}
-        \label{fig:associativity_fluidanimate}
+        \caption{Fluidanimate.}\label{fig:associativity_fluidanimate}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the associativity. There are three different settings for the associativity, 1 (direct mapped), 2 (2-set-associative) and 128 (fully associative). The block size is 32 bytes and the cache size is 4096 bytes.}
-    \label{fig:associativity}
+    \caption{The graphs show the number of executed cycles when varying the associativity. There are three different settings for the associativity, 1 (direct mapped), 2 (2-set-associative) and 128 (fully associative). The block size is 32 bytes and the cache size is 4096 bytes.}\label{fig:associativity}
 \end{figure}
 
 \begin{figure}[H]
@@ -124,56 +120,49 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{invalidations}
-        \caption{Invalidations.}
-        \label{fig:invalidations}
+        \caption{Invalidations.}\label{fig:invalidations}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{traffic}
-        \caption{Bus traffic.}
-        \label{fig:bus_traffic}
+        \caption{Bus traffic.}\label{fig:bus_traffic}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
-        %\incfig{}
-        \caption{}
-        \label{fig:}
+        % \incfig{}
+        \caption{}\label{fig:}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}
-    \label{fig:}
+    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:}
 \end{figure}
 
 \subsection{Advanced Task}\label{results:advanced}
+
 
 \begin{figure}[H]
     \centering
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{cache_size_blackscholes_advanced}
-        \caption{Blackscholes.}
-        \label{fig:cache_size_blackscholes_advanced}
+        \caption{Blackscholes.}\label{fig:cache_size_blackscholes_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Cache size\par\medskip
         \incfig{cache_size_bodytrack_advanced}
-        \caption{Bodytrack.}
-        \label{fig:cache_size_bodytrack_advanced}
+        \caption{Bodytrack.}\label{fig:cache_size_bodytrack_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{cache_size_fluidanimate_advanced}
-        \caption{Fluidanimate.}
-        \label{fig:cache_size_fluidanimate_advanced}
+        \caption{Fluidanimate.}\label{fig:cache_size_fluidanimate_advanced}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the size of the cache. There are three different settings for the cache size, 1024 bytes, 4096 bytes and 8192 bytes. The associativity is 2 and the block size is 32 bytes.}
-    \label{fig:cache_size_advanced}
+    \caption{The graphs show the number of executed cycles when varying the size of the cache. There are three different settings for the cache size, 1024 bytes, 4096 bytes and 8192 bytes. The associativity is 2 and the block size is 32 bytes.}\label{fig:cache_size_advanced}
 \end{figure}
 
 \begin{figure}[H]
@@ -181,27 +170,23 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{block_size_blackscholes_advanced}
-        \caption{Blackscholes.}
-        \label{fig:block_size_blackscholes_advanced}
+        \caption{Blackscholes.}\label{fig:block_size_blackscholes_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Block size\par\medskip
         \incfig{block_size_bodytrack_advanced}
-        \caption{Bodytrack.}
-        \label{fig:block_size_bodytrack_advanced}
+        \caption{Bodytrack.}\label{fig:block_size_bodytrack_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{block_size_fluidanimate_advanced}
-        \caption{Fluidanimate.}
-        \label{fig:block_size_fluidanimate_advanced}
+        \caption{Fluidanimate.}\label{fig:block_size_fluidanimate_advanced}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}
-    \label{fig:block_size_advanced}
+    \caption{The graphs show the number of executed cycles when varying the block size. There are three different settings for the block size, 16 bytes, 32 bytes and 64 bytes. The associativity is 2 and the cache size is 4096 bytes.}\label{fig:block_size_advanced}
 \end{figure}
 
 \begin{figure}[H]
@@ -209,27 +194,23 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{associativity_blackscholes_advanced}
-        \caption{Blackscholes.}
-        \label{fig:associativity_blackscholes_advanced}
+        \caption{Blackscholes.}\label{fig:associativity_blackscholes_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         Associativity\par\medskip
         \incfig{associativity_bodytrack_advanced}
-        \caption{Bodytrack.}
-        \label{fig:associativity_bodytrack_advanced}
+        \caption{Bodytrack.}\label{fig:associativity_bodytrack_advanced}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{associativity_fluidanimate_advanced}
-        \caption{Fluidanimate.}
-        \label{fig:associativity_fluidanimate_advanced}
+        \caption{Fluidanimate.}\label{fig:associativity_fluidanimate_advanced}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of executed cycles when varying the associativity. There are three different settings for the associativity, 1 (direct mapped), 2 (2-set-associative) and 128 (fully associative). The block size is 32 bytes and the cache size is 4096 bytes.}
-    \label{fig:associativity_advanced}
+    \caption{The graphs show the number of executed cycles when varying the associativity. There are three different settings for the associativity, 1 (direct mapped), 2 (2-set-associative) and 128 (fully associative). The block size is 32 bytes and the cache size is 4096 bytes.}\label{fig:associativity_advanced}
 \end{figure}
 
 \begin{figure}[H]
@@ -237,24 +218,20 @@ We can see that ...
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{invalidations_advanced}
-        \caption{Invalidations.}
-        \label{fig:invalidations}
+        \caption{Invalidations.}\label{fig:invalidations}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
         \incfig{traffic_advanced}
-        \caption{Bus traffic.}
-        \label{fig:bus_traffic}
+        \caption{Bus traffic.}\label{fig:bus_traffic}
     \end{subfigure}%
     \hfill
     \begin{subfigure}[b]{0.33\textwidth}
         \centering
-        %\incfig{}
-        \caption{}
-        \label{fig:}
+        % \incfig{}
+        \caption{}\label{fig:}
     \end{subfigure}
     \hfill
-    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}
-    \label{fig:}
+    \caption{The graphs show the number of invalidations, bus traffic and ... for all the protocols and benchmark traces with the default settings.}\label{fig:}
 \end{figure}
