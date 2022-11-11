@@ -62,9 +62,11 @@
     \put(0.60765832,0.23371347){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Sc\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=4]{dragon_snoop.pdf}}%
     \put(0.31230176,0.03454164){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Sm\end{tabular}}}}%
-    \put(0.47271446,0.12204361){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusUpdMem/BusUpdShared\end{tabular}}}}%
+    \put(0.25686094,0.14754556){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusUpdMem/BusUpdShared\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=5]{dragon_snoop.pdf}}%
     \put(0.38764757,0.02285563){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
-    \put(0.38764757,0.24847336){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\end{tabular}}}}%
+    \put(0.38764757,0.26849365){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusRdMem/BusRdShared\\BusUpdMem/BusUpdShared\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{dragon_snoop.pdf}}%
+    \put(0.63074989,0.13812656){\color[rgb]{0.15686275,0.04313725,0.04313725}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}BusUpdMem/BusUpdShared\end{tabular}}}}%
   \end{picture}%
 \endgroup%

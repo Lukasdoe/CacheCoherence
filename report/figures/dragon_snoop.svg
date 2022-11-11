@@ -65,8 +65,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4793646"
-     inkscape:cx="482.30165"
-     inkscape:cy="157.16207"
+     inkscape:cx="426.19649"
+     inkscape:cy="61.850878"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -176,12 +176,12 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
-       x="113.45147"
-       y="215.70953"
+       x="61.646626"
+       y="209.58907"
        id="text1106-3"><tspan
          sodipodi:role="line"
-         x="113.45147"
-         y="215.70953"
+         x="61.646626"
+         y="209.58907"
          id="tspan501-6">BusUpdMem/BusUpdShared</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker2180)"
@@ -212,11 +212,30 @@
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
        x="93.035416"
-       y="185.36639"
+       y="180.56152"
        id="text810"><tspan
          sodipodi:role="line"
          x="93.035416"
-         y="185.36639"
-         id="tspan808">BusRdMem/BusRdShared</tspan></text>
+         y="180.56152"
+         id="tspan808">BusRdMem/BusRdShared</tspan><tspan
+         sodipodi:role="line"
+         x="93.035416"
+         y="184.53027"
+         id="tspan435">BusUpdMem/BusUpdShared</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker2180)"
+       d="m 149.52895,228.8982 -0.0412,-33.45799"
+       id="path1196"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
+       x="151.37997"
+       y="211.84962"
+       id="text1296"><tspan
+         sodipodi:role="line"
+         x="151.37997"
+         y="211.84962"
+         id="tspan1294">BusUpdMem/BusUpdShared</tspan></text>
   </g>
 </svg>
