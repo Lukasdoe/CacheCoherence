@@ -64,9 +64,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.99437388"
-     inkscape:cx="492.26957"
-     inkscape:cy="132.24402"
+     inkscape:zoom="1.7826606"
+     inkscape:cx="371.07456"
+     inkscape:cy="129.86207"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -217,10 +217,40 @@
          id="tspan477-6-5"
          x="160.08031"
          y="225.58788">BusUpdMem/Clear</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
+       x="114.22201"
+       y="210.84196"
+       id="text479-3-7-3"><tspan
+         sodipodi:role="line"
+         id="tspan477-6-5-6"
+         x="114.22201"
+         y="210.84196">BusUpdMem</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#Arrow2)"
        d="m 153.56431,233.536 c 16.98036,0.0139 -2.85522,-20.19323 -3.08506,-5.42373"
        id="path3806"
        sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker8495)"
+       d="m 80.771583,191.5099 59.245827,39.59782"
+       id="path334"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker8495)"
+       d="M 76.162099,193.35076 75.972023,226.7308"
+       id="path541"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
+       x="47.117714"
+       y="210.11267"
+       id="text608"><tspan
+         sodipodi:role="line"
+         id="tspan606"
+         x="47.117714"
+         y="210.11267">BusUpdShared</tspan></text>
   </g>
 </svg>

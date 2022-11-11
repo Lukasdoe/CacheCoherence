@@ -122,8 +122,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.7308668"
-     inkscape:cx="344.62502"
-     inkscape:cy="175.34567"
+     inkscape:cx="396.04434"
+     inkscape:cy="183.4341"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -416,7 +416,11 @@
          sodipodi:role="line"
          id="tspan7719-5-1"
          x="65.263222"
-         y="207.35005">Read/BusRdMem</tspan></text>
+         y="207.35005">Read/BusRdMem</tspan><tspan
+         sodipodi:role="line"
+         x="65.263222"
+         y="211.3188"
+         id="tspan489">Write/BusUpdMem</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#280b0b;fill-opacity:1;stroke:none;stroke-width:0.3;stroke-opacity:1"
@@ -427,10 +431,5 @@
          id="tspan7719-5-1-6"
          x="78.339066"
          y="226.42194">Write/BusRdMem</tspan></text>
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.3;marker-end:url(#marker11349)"
-       d="M 60.283473,202.98905 168.4934,248.26248"
-       id="path395"
-       sodipodi:nodetypes="cc" />
   </g>
 </svg>
