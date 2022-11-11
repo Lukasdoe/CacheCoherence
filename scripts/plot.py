@@ -168,10 +168,19 @@ def invalidations(advanced=False):
     custom(df, "invalidations", advanced)
 
 
+def shared_private_accesses(advanced=False):
+    name = "default"
+    data_path = os.path.join(root_path, f"data/{name}.csv")
+    df = pd.read_csv(data_path)
+    custom(df, "total_shared_accesses", advanced)
+    custom(df, "total_private_accesses", advanced)
+
+
 if __name__ == "__main__":
     advanced = True
-    cache_size(advanced)
-    block_size(advanced)
-    associativity(advanced)
-    bus_traffic(advanced)
-    invalidations(advanced)
+    # cache_size(advanced)
+    # block_size(advanced)
+    # associativity(advanced)
+    # bus_traffic(advanced)
+    # invalidations(advanced)
+    shared_private_accesses(advanced)
