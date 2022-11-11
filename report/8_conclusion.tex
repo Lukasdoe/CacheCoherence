@@ -1,1 +1,17 @@
 \section{Conclusion}
+After intensively comparing both the MESI and Dragon cache coherence protocol
+using three distinct benchmarks and several varying cache design choices, we can
+conclude that even though they work differently, the difference between their
+overall performance is negligible. It is far more important for the performance, which other cache design
+choices, like the size, associativity or block size, are made. Even though both
+protocols have certain scenarios which they handle more efficiently than other
+protocols, the overall overhead of cache coherency outweighs these advantages.
+
+Looking at the optimization of the MESI protocol implemented in the advanced
+task, we can also conclude that changes which first look like an improvement can
+also lead to unwanted side effects. In the case of the \emph{Read-Broadcast}
+optimization, this can be seen in less exclusive states, leading to more
+required invalidations. This shows that the actual performance impact of every
+optimization has to be carefully evaluated using real world programs like our
+benchmarks. Otherwise, optimizing without constant performance analysis might
+even degrade the cache coherence systems performance.
