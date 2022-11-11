@@ -11,8 +11,7 @@ to the central, shared bus.
 \begin{figure}[ht]
     \centering
     \incfig{overview}
-    \caption{Overview}
-    \label{fig:overview}
+    \caption{Overview}\label{fig:overview}
 \end{figure}
 
 \subsubsection{Record}
@@ -42,7 +41,7 @@ all cores have to be finished with one stage until any core can enter the next s
 
 The \texttt{step} stage lets the core parse the next instruction from the record steam (if the core
 is currently not busy) and updates the core's cache's internal state appropriately, without any
-information of the other caches. This means that e.g. all bus reads are expected to result in the
+information of the other caches. This means that e.g.\ all bus reads are expected to result in the
 ``exclusive'' state.
 
 The \texttt{snoop} stage lets the core's cache snoop on the bus.
@@ -155,12 +154,11 @@ and operations are invoked on this instance:
 \begin{lstlisting}
 protocol.snoop(...)
 \end{lstlisting}
-\,.
 
 This is really useful, because the cache does not need to know which protocol is used and can
 therefore be built more abstract.
 
-\subsection{Protocol}
+\subsection{Coherence Protocols}
 Like described in Section~\ref{sec:sub_protocol}, each protocol needs to implement a set of methods
 to satisfy the protocol trait. The following two sub sections will go in depth how the MESI protocol and
 Dragon protocol implements these, as well as show the state diagrams that come up.
@@ -179,7 +177,7 @@ This among other non-trivial transitions will be described in this section.
 \begin{figure}[ht]
     \centering
     \incfig{mesi}
-    \caption{MESI. The step phase of the update cycle.}\label{fig:mesi}
+    \caption{MESI.\ The step phase of the update cycle.}\label{fig:mesi}
 \end{figure}
 
 $I \to S$.
@@ -203,8 +201,7 @@ They will invalidate their cache lines and transition to I.
 \begin{figure}[ht]
     \centering
     \incfig{mesi_snoop}
-    \caption{MESI. The snoop phase of the update cycle.}
-    \label{fig:mesi_snoop}
+    \caption{MESI.\ The snoop phase of the update cycle.}\label{fig:mesi_snoop}
 \end{figure}
 
 % $S \to S$.
@@ -231,8 +228,7 @@ has the only copy of the cache line.
 \begin{figure}[ht]
     \centering
     \incfig{mesi_after_snoop}
-    \caption{MESI. The after snoop phase of the update cycle.}
-    \label{fig:mesi_after_snoop}
+    \caption{MESI.\ The after snoop phase of the update cycle.}\label{fig:mesi_after_snoop}
 \end{figure}
 
 From a bus transaction, a cache line can either go to S or I by looking at the Figure~\ref{fig:mesi_snoop}.
@@ -259,8 +255,7 @@ an access to a cache line in this state is guaranteed to miss.
 \begin{figure}[ht]
     \centering
     \incfig{dragon}
-    \caption{Dragon. The step phase of the update cycle.}
-    \label{fig:dragon}
+    \caption{Dragon. The step phase of the update cycle.}\label{fig:dragon}
 \end{figure}
 
 $Any \to E$.
@@ -294,8 +289,7 @@ issued the write will transition from state E to state Sm in the after snoop pha
 \begin{figure}[ht]
     \centering
     \incfig{dragon_snoop}
-    \caption{Dragon. The snoop phase of the update cycle.}
-    \label{fig:dragon_snoop}
+    \caption{Dragon. The snoop phase of the update cycle.}\label{fig:dragon_snoop}
 \end{figure}
 
 $Sc \to M$,
@@ -324,8 +318,7 @@ the write can go back to state Sm.
 \begin{figure}[ht]
     \centering
     \incfig{dragon_after_snoop}
-    \caption{Dragon. The after snoop phase of the update cycle.}
-    \label{fig:dragon_after_snoop}
+    \caption{Dragon. The after snoop phase of the update cycle.}\label{fig:dragon_after_snoop}
 \end{figure}
 
 % $M \to M$.
@@ -340,7 +333,7 @@ the write can go back to state Sm.
 % $Sm \to Sm$.
 % When a cache hit occurs while a core is reading to a cache line in state Sm, the cache line will remain in state Sm and no bus transaction will be issued.
 
-The remaining states are rather trivial, e.g. will not issue a bus transaction and the cache line will remain
+The remaining states are rather trivial, e.g.\ will not issue a bus transaction and the cache line will remain
 in the same state. Whenever the bus transaction is changed to a shared bus transaction (\texttt{BusRdShared}
 and \texttt{BusUpdShared}) the remaining cycles that the cores have to wait will be reduced to symbolize
 the cache-to-cache transfer.

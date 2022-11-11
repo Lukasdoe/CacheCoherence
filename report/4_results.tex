@@ -25,18 +25,18 @@ subplot) and one that shows the relative difference of the absolute values of
 the two protocols (the top subplot), because they are quite similar. This is useful to
 distinguish the overall pattern when varying a parameter as well as see which of
 the protocols performed best. The difference is always calculated using
-$$
+\[
     P^\text{MESI}_i - P^\text{Dragon}_i
-$$
+\]
 where $ P^\text{<protocol>}_i $ is the value for each protocol, for each
 parameter value $i$ in each plot. A negative difference means that the Dragon protocol
 required more cycles, a positive means that MESI was slower than Dragon.
 Since it takes quite some time to run each
 benchmark trace, there will only be two shifts for each parameter. This already
 constitutes a large number of tests,
-$$
+\[
     \underbrace{2}_\text{2 protocols} \times \underbrace{3}_\text{3 traces} \times \underbrace{2}_\text{2 shifts} \times \underbrace{3}_\text{3 parameters} + \underbrace{3 \times 2}_\text{default} = 42
-$$
+\]
 without accounting for the advanced tests. Figure~\ref{fig:cache_size} shows
 the performance for each protocol when varying the cache size.
 
@@ -69,7 +69,7 @@ the performance for each protocol when varying the cache size.
 We can see that the MESI protocol performs better for the Blackscholes benchmark,
 while the Dragon protocol performs better for the Bodytrack and the Fluidanimate
 benchmark when the cache size is 1024. However, the difference is only significant
-for for this cache size, and as we increase the cache size, both protocols have more
+for this cache size, and as we increase the cache size, both protocols have more
 or less the same performance. The overall pattern is that the bigger the cache size
 is, the fewer clock cycles are required, while the impact of increasing the cache
 size seems bigger in the Blackscholes. Bigger cache sizes lead to fewer cache misses
@@ -87,12 +87,12 @@ since a higher degree of associativity will require more parallel searches for t
 cache line. The result of the simulator is again not affected by this tradeoff.
 
 In Figure~\ref{fig:block_size}, the overall pattern is not the same in every subplot.
-In the Blacksholes benchmark it seems like increasing the block size increases the
+In the Blackscholes benchmark it seems like increasing the block size increases the
 number of clock cycles. For the Bodytrack benchmark and  the Fluidanimate benchmark,
 increasing the block size decreases the number of clock cycles, indicating that these
 two benchmarks deal with a lot of consecutive data where it is beneficial to load bigger
 chunks of data. The MESI protocol performs better in the Blackscholes benchmark and the
-Fluidanimate benchmark, but the difference are more subtle the higher the block size is.
+Fluidanimate benchmark, but the differences are more subtle the higher the block size is.
 
 \begin{figure}[H]
     \centering
@@ -145,9 +145,9 @@ Fluidanimate benchmark, but the difference are more subtle the higher the block 
 Given the shifts of the cache size, associativity and the block size it is hard to
 identify which of the protocols is the overall winner. It depends on the benchmark,
 and the difference is not that great after all if we consider the absolute values
-for each parameter in each subplot. The have very similar performance.
+for each parameter in each subplot. They have a similar performance.
 
-Looking at Figure~\ref{fig:inv_bus} we see a big difference between the two protocols.
+Looking at Figure~\ref{fig:inv_bus}, we see a big difference between the two protocols.
 The number of invalidations are far more for the MESI protocol, than the number of bus
 updates for the Dragon protocol for all benchmarks.
 
@@ -196,17 +196,17 @@ The analysis in this section is again based on the default configuration describ
 the project description and the same tests will be conducted as in the previous
 section. The difference is that the Dragon protocol is replaced with the
 advanced version of the MESI protocol. The difference is calculated using
-$$
+\[
     P^\text{MESI}_i - P^\text{MESI (advanced)}_i
-$$
+\]
 where $ P^\text{<protocol>}_i $ is the value for each protocol, for each
 parameter value $i$ in each plot. A negative difference means that the advanced
 version of the MESI protocol required more cycles and a positive difference means
 that MESI was slower than the advanced version.
 
 We see the same overall trend when shifting the cache size, associativity and block size
-as in the previous section, see Figures~\ref{fig:cache_size_advanced},
-\ref{fig:associativity_advanced} and \ref{fig:block_size_advanced}. There is more
+as in the previous section, see
+Figures~\ref{fig:cache_size_advanced},~\ref{fig:associativity_advanced} and~\ref{fig:block_size_advanced}. There are more
 bars in favor of the advanced version of the MESI protocol.
 
 
